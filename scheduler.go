@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -8,10 +9,10 @@ import (
 	"sync"
 )
 
-func forceKillPod(podChannel chan v1.Pod, wg *sync.WaitGroup, deleteOptions *metav1.DeleteOptions,
+func forceKillPod(podChannel chan v1.Pod, wg *sync.WaitGroup, deleteOptions metav1.DeleteOptions,
 	clientSet *kubernetes.Clientset, namespace string) {
 	for pod := range podChannel {
-		err := clientSet.CoreV1().Pods(namespace).Delete(pod.Name, deleteOptions)
+		err := clientSet.CoreV1().Pods(namespace).Delete(context.TODO(), pod.Name, deleteOptions)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -30,9 +31,9 @@ func run(namespace string, clientSet *kubernetes.Clientset, channelCapacity int)
 	if len(pods) > 0 {
 		log.Printf("%d pods found on namespace %s, starting execution!\n", len(pods), namespace)
 		var wg sync.WaitGroup
-		var deleteOptions *metav1.DeleteOptions
+		var deleteOptions metav1.DeleteOptions
 		var zero int64 = 0
-		deleteOptions = &metav1.DeleteOptions{GracePeriodSeconds: &zero}
+		deleteOptions = metav1.DeleteOptions{GracePeriodSeconds: &zero}
 		podChannel := make(chan v1.Pod, channelCapacity)
 		for i := 0; i < cap(podChannel); i++ {
 			go forceKillPod(podChannel, &wg, deleteOptions, clientSet, namespace)
