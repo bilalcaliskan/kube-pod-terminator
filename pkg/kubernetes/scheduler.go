@@ -1,4 +1,4 @@
-package main
+package kubernetes
 
 import (
 	"context"
@@ -21,7 +21,7 @@ func forceKillPod(podChannel chan v1.Pod, wg *sync.WaitGroup, deleteOptions meta
 	}
 }
 
-func run(namespace string, clientSet *kubernetes.Clientset, channelCapacity int) {
+func Run(namespace string, clientSet *kubernetes.Clientset, channelCapacity int) {
 	pods, err := getTerminatingPods(clientSet, namespace)
 
 	if err != nil {

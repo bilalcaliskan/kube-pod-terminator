@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"kube-pod-terminator/pkg/kubernetes"
 	"log"
 	"os"
 	"path/filepath"
@@ -31,21 +32,21 @@ func init() {
 }
 
 func main() {
-	config, err := getConfig(*masterUrl, *kubeConfigPath)
+	config, err := kubernetes.GetConfig(*masterUrl, *kubeConfigPath)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Create an rest client not targeting specific API version
-	clientSet, err := getClientSet(config)
+	clientSet, err := kubernetes.GetClientSet(config)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	run(*namespace, clientSet, *channelCapacity)
+	kubernetes.Run(*namespace, clientSet, *channelCapacity)
 	ticker := time.NewTicker(time.Duration(int32(*tickerIntervalMin)) * time.Minute)
 	for _ = range ticker.C {
-		run(*namespace, clientSet, *channelCapacity)
+		kubernetes.Run(*namespace, clientSet, *channelCapacity)
 	}
 	select {}
 }

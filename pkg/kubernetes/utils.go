@@ -1,4 +1,4 @@
-package main
+package kubernetes
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func getConfig(masterUrl, kubeConfigPath string) (*rest.Config, error) {
+func GetConfig(masterUrl, kubeConfigPath string) (*rest.Config, error) {
 	config, err := clientcmd.BuildConfigFromFlags(masterUrl, kubeConfigPath)
 	if err != nil {
 		return nil, err
@@ -19,7 +19,7 @@ func getConfig(masterUrl, kubeConfigPath string) (*rest.Config, error) {
 	return config, nil
 }
 
-func getClientSet(config *rest.Config) (*kubernetes.Clientset, error) {
+func GetClientSet(config *rest.Config) (*kubernetes.Clientset, error) {
 	clientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
