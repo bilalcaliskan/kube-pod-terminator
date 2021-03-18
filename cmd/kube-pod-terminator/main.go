@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"go.uber.org/zap"
 	"kube-pod-terminator/pkg/kubernetes"
 	"log"
 	"os"
@@ -10,29 +11,40 @@ import (
 )
 
 var (
-	masterUrl, kubeConfigPath, namespace *string
-	tickerIntervalMin, channelCapacity *int
+	masterUrl, kubeConfigPath, namespace string
+	tickerIntervalMin, channelCapacity int
+	logger *zap.Logger
+	err error
 )
 
 func init() {
-	masterUrl = flag.String("masterUrl", "", "(optional) Cluster master ip to access")
-	kubeConfigPath = flag.String("kubeConfigPath", filepath.Join(os.Getenv("HOME"), ".kube", "config"),
+	flag.StringVar(&masterUrl, "masterUrl", "", "(optional) Cluster master ip to access")
+	flag.StringVar(&kubeConfigPath, "kubeConfigPath", filepath.Join(os.Getenv("HOME"), ".kube", "config"),
 		"(optional) Kube config file path to access cluster")
-	namespace = flag.String("namespace", "default", "(optional) Namespace to run on")
-	tickerIntervalMin = flag.Int("tickerIntervalMin", 5, "(optional) This app is a scheduled app, so " +
+	flag.StringVar(&namespace, "namespace", "default", "(optional) Namespace to run on")
+	flag.IntVar(&tickerIntervalMin, "tickerIntervalMin", 5, "(optional) This app is a scheduled app, so " +
 		"it continuously runs in specified interval")
-	channelCapacity = flag.Int("channelCapacity", 10, "(optional) Channel capacity for concurrency")
+	flag.IntVar(&channelCapacity, "channelCapacity", 10, "(optional) Channel capacity for concurrency")
 	flag.Parse()
 
-	log.Printf("Using masterUrl: %s\n", *masterUrl)
-	log.Printf("Using kubeConfigPath: %s\n", *kubeConfigPath)
-	log.Printf("Using namespace: %s\n", *namespace)
-	log.Printf("Using tickerIntervalMin: %d\n", *tickerIntervalMin)
-	log.Printf("Using channelCapaciry: %d\n", *channelCapacity)
+	logger, err = zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+
+	logger.Info("fetched arguments", zap.String("masterUrl", masterUrl), zap.String("kubeConfigPath", kubeConfigPath),
+		zap.String("namespace", namespace), zap.Int("ticketIntervalMin", tickerIntervalMin), zap.Int("channelCapacity", channelCapacity))
 }
 
 func main() {
-	config, err := kubernetes.GetConfig(*masterUrl, *kubeConfigPath)
+	defer func() {
+		err := logger.Sync()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	config, err := kubernetes.GetConfig(masterUrl, kubeConfigPath)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -43,10 +55,10 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	kubernetes.Run(*namespace, clientSet, *channelCapacity)
-	ticker := time.NewTicker(time.Duration(int32(*tickerIntervalMin)) * time.Minute)
-	for _ = range ticker.C {
-		kubernetes.Run(*namespace, clientSet, *channelCapacity)
+	kubernetes.Run(namespace, clientSet, channelCapacity, logger)
+	ticker := time.NewTicker(time.Duration(int32(tickerIntervalMin)) * time.Minute)
+	for range ticker.C {
+		kubernetes.Run(namespace, clientSet, channelCapacity, logger)
 	}
 	select {}
 }

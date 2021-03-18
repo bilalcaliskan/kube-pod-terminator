@@ -7,7 +7,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"log"
 	"time"
 )
 
@@ -33,13 +32,10 @@ func getTerminatingPods(clientSet *kubernetes.Clientset, namespace string) ([]v1
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Total %d pods found on namespace %s!\n", len(pods.Items), namespace)
 
 	for _, pod := range pods.Items {
 		deletionTimestamp := pod.ObjectMeta.DeletionTimestamp
-		// if deletionTimestamp != nil && deletionTimestamp.Add(2 * time.Hour).Before(time.Now()) {
 		if deletionTimestamp != nil && deletionTimestamp.Add(2 * time.Millisecond).Before(time.Now()) {
-			log.Printf("Adding pod %s to the terminating pod list!\n", pod.Name)
 			resultSlice = append(resultSlice, pod)
 		}
 	}

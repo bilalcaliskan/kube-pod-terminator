@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"context"
+	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -10,44 +11,44 @@ import (
 )
 
 func forceKillPod(podChannel chan v1.Pod, wg *sync.WaitGroup, deleteOptions metav1.DeleteOptions,
-	clientSet *kubernetes.Clientset, namespace string) {
+	clientSet *kubernetes.Clientset, namespace string, logger *zap.Logger) {
 	for pod := range podChannel {
 		err := clientSet.CoreV1().Pods(namespace).Delete(context.TODO(), pod.Name, deleteOptions)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		log.Printf("Pod %s force deleted!\n", pod.Name)
+		logger.Info("pod force deleted", zap.String("name", pod.Name), zap.String("namespace", pod.Namespace))
 		wg.Done()
 	}
 }
 
-func Run(namespace string, clientSet *kubernetes.Clientset, channelCapacity int) {
+func Run(namespace string, clientSet *kubernetes.Clientset, channelCapacity int, logger *zap.Logger) {
 	pods, err := getTerminatingPods(clientSet, namespace)
-
 	if err != nil {
-		log.Fatalln(err)
+		logger.Warn("an error occured while getting terminating pods", zap.Error(err))
 	}
 
 	if len(pods) > 0 {
-		log.Printf("%d pods found on namespace %s, starting execution!\n", len(pods), namespace)
+		logger.Info("found pods", zap.Int("podCount", len(pods)), zap.String("namespace", namespace))
 		var wg sync.WaitGroup
 		var deleteOptions metav1.DeleteOptions
 		var zero int64 = 0
 		deleteOptions = metav1.DeleteOptions{GracePeriodSeconds: &zero}
 		podChannel := make(chan v1.Pod, channelCapacity)
 		for i := 0; i < cap(podChannel); i++ {
-			go forceKillPod(podChannel, &wg, deleteOptions, clientSet, namespace)
+			go forceKillPod(podChannel, &wg, deleteOptions, clientSet, namespace, logger)
 		}
 
-		for i, pod := range pods {
+		for _, pod := range pods {
+			logger.Info("adding pod to podChannel channel", zap.String("name", pod.Name),
+				zap.String("namespace", pod.Namespace))
 			wg.Add(1)
-			log.Printf("Adding pod '%d - %s' to the podChannel channel!\n", i, pod.Name)
 			podChannel <- pod
 		}
 
 		wg.Wait()
 		close(podChannel)
 	} else {
-		log.Printf("No terminating pod found on namespace %s, so skipping execution...\n", namespace)
+		logger.Info("no terminating pod found, skipping execution", zap.String("namespace", namespace))
 	}
 }
