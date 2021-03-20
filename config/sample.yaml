@@ -64,6 +64,10 @@ spec:
       containers:
         - image: 'docker.io/bilalcaliskan/kube-pod-terminator:latest'
           command: ["./main"]
-          args: ["--namespace", "default", "--tickerIntervalMin", "10", "--inCluster", "true"]
+          args: [
+              "--namespace", "default",
+              "--tickerIntervalMin", "10",
+              "--inCluster", "true"
+          ]
           imagePullPolicy: Always
           name: kube-pod-terminator
