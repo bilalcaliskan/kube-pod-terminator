@@ -49,7 +49,7 @@ func main() {
 		}
 	}()
 
-	config, err := scheduler.GetConfig(masterUrl, kubeConfigPath)
+	config, err := scheduler.GetConfig(masterUrl, kubeConfigPath, inCluster)
 	if err != nil {
 		log.Fatalln(err)
 	}
