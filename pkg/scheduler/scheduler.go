@@ -31,8 +31,7 @@ func Run(namespace string, clientSet *kubernetes.Clientset, channelCapacity int,
 	if len(pods) > 0 {
 		logger.Info("found pods", zap.Int("podCount", len(pods)), zap.String("namespace", namespace))
 		var wg sync.WaitGroup
-		var deleteOptions metav1.DeleteOptions
-		deleteOptions = metav1.DeleteOptions{GracePeriodSeconds: &gracePeriodSeconds}
+		deleteOptions := metav1.DeleteOptions{GracePeriodSeconds: &gracePeriodSeconds}
 		podChannel := make(chan v1.Pod, channelCapacity)
 		for i := 0; i < cap(podChannel); i++ {
 			go terminatePod(podChannel, &wg, deleteOptions, clientSet, namespace, logger)
