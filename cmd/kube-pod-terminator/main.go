@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"go.uber.org/zap"
-	"kube-pod-terminator/pkg/kubernetes"
+	"kube-pod-terminator/pkg/scheduler"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,18 +13,21 @@ import (
 var (
 	masterUrl, kubeConfigPath, namespace string
 	tickerIntervalMin, channelCapacity int
+	gracePeriodSeconds int64
 	logger *zap.Logger
 	err error
+	inCluster bool
 )
 
 func init() {
-	flag.StringVar(&masterUrl, "masterUrl", "", "(optional) Cluster master ip to access")
+	flag.StringVar(&masterUrl, "masterUrl", "", "Cluster master ip to access")
+	flag.BoolVar(&inCluster, "inCluster", true, "Specify if kube-pod-terminator is running in cluster")
 	flag.StringVar(&kubeConfigPath, "kubeConfigPath", filepath.Join(os.Getenv("HOME"), ".kube", "config"),
-		"(optional) Kube config file path to access cluster")
-	flag.StringVar(&namespace, "namespace", "default", "(optional) Namespace to run on")
-	flag.IntVar(&tickerIntervalMin, "tickerIntervalMin", 5, "(optional) This app is a scheduled app, so " +
-		"it continuously runs in specified interval")
-	flag.IntVar(&channelCapacity, "channelCapacity", 10, "(optional) Channel capacity for concurrency")
+		"Kube config file path to access cluster. Required while running out of Kubernetes cluster")
+	flag.StringVar(&namespace, "namespace", "default", "Namespace to run on. Defaults to default namespace")
+	flag.IntVar(&tickerIntervalMin, "tickerIntervalMin", 5, "Interval of scheduled job to run")
+	flag.IntVar(&channelCapacity, "channelCapacity", 10, "Channel capacity for concurrency")
+	flag.Int64Var(&gracePeriodSeconds, "gracePeriodSeconds", 30, "Grace period to delete pods")
 	flag.Parse()
 
 	logger, err = zap.NewProduction()
@@ -32,8 +35,10 @@ func init() {
 		panic(err)
 	}
 
-	logger.Info("fetched arguments", zap.String("masterUrl", masterUrl), zap.String("kubeConfigPath", kubeConfigPath),
-		zap.String("namespace", namespace), zap.Int("ticketIntervalMin", tickerIntervalMin), zap.Int("channelCapacity", channelCapacity))
+	logger.Info("fetched arguments", zap.String("masterUrl", masterUrl),
+		zap.String("kubeConfigPath", kubeConfigPath), zap.String("namespace", namespace),
+		zap.Int("ticketIntervalMin", tickerIntervalMin), zap.Int("channelCapacity", channelCapacity),
+		zap.Int64("gracePeriodSeconds", gracePeriodSeconds))
 }
 
 func main() {
@@ -44,21 +49,21 @@ func main() {
 		}
 	}()
 
-	config, err := kubernetes.GetConfig(masterUrl, kubeConfigPath)
+	config, err := scheduler.GetConfig(masterUrl, kubeConfigPath)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Create an rest client not targeting specific API version
-	clientSet, err := kubernetes.GetClientSet(config)
+	clientSet, err := scheduler.GetClientSet(config)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	kubernetes.Run(namespace, clientSet, channelCapacity, logger)
+	scheduler.Run(namespace, clientSet, channelCapacity, gracePeriodSeconds, logger)
 	ticker := time.NewTicker(time.Duration(int32(tickerIntervalMin)) * time.Minute)
 	for range ticker.C {
-		kubernetes.Run(namespace, clientSet, channelCapacity, logger)
+		scheduler.Run(namespace, clientSet, channelCapacity, gracePeriodSeconds, logger)
 	}
 	select {}
 }

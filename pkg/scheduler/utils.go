@@ -1,4 +1,4 @@
-package kubernetes
+package scheduler
 
 import (
 	"context"
@@ -10,11 +10,20 @@ import (
 	"time"
 )
 
-func GetConfig(masterUrl, kubeConfigPath string) (*rest.Config, error) {
-	config, err := clientcmd.BuildConfigFromFlags(masterUrl, kubeConfigPath)
+func GetConfig(masterUrl, kubeConfigPath string, inCluster bool) (*rest.Config, error) {
+	var config *rest.Config
+	var err error
+
+	if inCluster {
+		config, err = rest.InClusterConfig()
+	} else {
+		config, err = clientcmd.BuildConfigFromFlags(masterUrl, kubeConfigPath)
+	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	return config, nil
 }
 
@@ -35,7 +44,7 @@ func getTerminatingPods(clientSet *kubernetes.Clientset, namespace string) ([]v1
 
 	for _, pod := range pods.Items {
 		deletionTimestamp := pod.ObjectMeta.DeletionTimestamp
-		if deletionTimestamp != nil && deletionTimestamp.Add(2 * time.Millisecond).Before(time.Now()) {
+		if deletionTimestamp != nil && deletionTimestamp.Add(30 * time.Minute).Before(time.Now()) {
 			resultSlice = append(resultSlice, pod)
 		}
 	}

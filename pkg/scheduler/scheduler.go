@@ -1,4 +1,4 @@
-package kubernetes
+package scheduler
 
 import (
 	"context"
@@ -10,19 +10,19 @@ import (
 	"sync"
 )
 
-func forceKillPod(podChannel chan v1.Pod, wg *sync.WaitGroup, deleteOptions metav1.DeleteOptions,
+func terminatePod(podChannel chan v1.Pod, wg *sync.WaitGroup, deleteOptions metav1.DeleteOptions,
 	clientSet *kubernetes.Clientset, namespace string, logger *zap.Logger) {
 	for pod := range podChannel {
 		err := clientSet.CoreV1().Pods(namespace).Delete(context.TODO(), pod.Name, deleteOptions)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		logger.Info("pod force deleted", zap.String("name", pod.Name), zap.String("namespace", pod.Namespace))
+		logger.Info("pod deleted", zap.String("name", pod.Name), zap.String("namespace", pod.Namespace))
 		wg.Done()
 	}
 }
 
-func Run(namespace string, clientSet *kubernetes.Clientset, channelCapacity int, logger *zap.Logger) {
+func Run(namespace string, clientSet *kubernetes.Clientset, channelCapacity int, gracePeriodSeconds int64, logger *zap.Logger) {
 	pods, err := getTerminatingPods(clientSet, namespace)
 	if err != nil {
 		logger.Warn("an error occured while getting terminating pods", zap.Error(err))
@@ -32,11 +32,10 @@ func Run(namespace string, clientSet *kubernetes.Clientset, channelCapacity int,
 		logger.Info("found pods", zap.Int("podCount", len(pods)), zap.String("namespace", namespace))
 		var wg sync.WaitGroup
 		var deleteOptions metav1.DeleteOptions
-		var zero int64 = 0
-		deleteOptions = metav1.DeleteOptions{GracePeriodSeconds: &zero}
+		deleteOptions = metav1.DeleteOptions{GracePeriodSeconds: &gracePeriodSeconds}
 		podChannel := make(chan v1.Pod, channelCapacity)
 		for i := 0; i < cap(podChannel); i++ {
-			go forceKillPod(podChannel, &wg, deleteOptions, clientSet, namespace, logger)
+			go terminatePod(podChannel, &wg, deleteOptions, clientSet, namespace, logger)
 		}
 
 		for _, pod := range pods {
