@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// GetConfig gets parameters to generate rest.Config and returns it
 func GetConfig(masterUrl, kubeConfigPath string, inCluster bool) (*rest.Config, error) {
 	var config *rest.Config
 	var err error
@@ -27,6 +28,7 @@ func GetConfig(masterUrl, kubeConfigPath string, inCluster bool) (*rest.Config, 
 	return config, nil
 }
 
+// GetClientSet generates and returns kubernetes.Clientset using rest.Config
 func GetClientSet(config *rest.Config) (*kubernetes.Clientset, error) {
 	clientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -44,7 +46,7 @@ func getTerminatingPods(clientSet *kubernetes.Clientset, namespace string) ([]v1
 
 	for _, pod := range pods.Items {
 		deletionTimestamp := pod.ObjectMeta.DeletionTimestamp
-		if deletionTimestamp != nil && deletionTimestamp.Add(30 * time.Minute).Before(time.Now()) {
+		if deletionTimestamp != nil && deletionTimestamp.Add(30*time.Minute).Before(time.Now()) {
 			resultSlice = append(resultSlice, pod)
 		}
 	}

@@ -1,5 +1,7 @@
 # Kube Pod Terminator
 [![CI](https://github.com/bilalcaliskan/kube-pod-terminator/workflows/CI/badge.svg?event=push)](https://github.com/bilalcaliskan/kube-pod-terminator/actions?query=workflow%3ACI)
+[![Docker pulls](https://img.shields.io/docker/pulls/bilalcaliskan/kube-pod-terminator)](https://hub.docker.com/r/bilalcaliskan/kube-pod-terminator/)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bilalcaliskan/kube-pod-terminator)](https://goreportcard.com/report/github.com/bilalcaliskan/kube-pod-terminator)
 
 On some Kubernetes versions, there is a problem that pods stuck in `Terminating` status on some circumstances. This tool runs 
 in Kubernetes cluster and connects to the kube-apiserver, discovers Terminating pods which are in `Terminating` status 

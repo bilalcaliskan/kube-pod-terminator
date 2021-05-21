@@ -1,3 +1,17 @@
+lint:
+	golangci-lint run --timeout 2m0s
+
+fmt:
+	go fmt ./...
+
+vet:
+	go vet ./...
+
+ineffassign:
+	go get github.com/gordonklaus/ineffassign
+	go mod vendor
+	ineffassign ./...
+
 test:
 	go test ./...
 

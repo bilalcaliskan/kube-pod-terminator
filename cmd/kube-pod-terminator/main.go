@@ -13,11 +13,11 @@ import (
 
 var (
 	masterUrl, kubeConfigPath, namespace string
-	tickerIntervalMin, channelCapacity int
-	gracePeriodSeconds int64
-	logger *zap.Logger
-	err error
-	inCluster bool
+	tickerIntervalMin, channelCapacity   int
+	gracePeriodSeconds                   int64
+	logger                               *zap.Logger
+	err                                  error
+	inCluster                            bool
 )
 
 func init() {

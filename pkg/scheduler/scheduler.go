@@ -22,10 +22,11 @@ func terminatePod(podChannel chan v1.Pod, wg *sync.WaitGroup, deleteOptions meta
 	}
 }
 
+// Run operates the business logic, fetches the terminating pods and terminates them
 func Run(namespace string, clientSet *kubernetes.Clientset, channelCapacity int, gracePeriodSeconds int64, logger *zap.Logger) {
 	pods, err := getTerminatingPods(clientSet, namespace)
 	if err != nil {
-		logger.Warn("an error occured while getting terminating pods", zap.Error(err))
+		logger.Warn("an error occurred while getting terminating pods", zap.Error(err))
 	}
 
 	if len(pods) > 0 {
