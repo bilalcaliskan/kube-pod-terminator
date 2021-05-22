@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	_ "github.com/dimiro1/banner/autoload"
 	"go.uber.org/zap"
 	"kube-pod-terminator/pkg/scheduler"
 	"log"
