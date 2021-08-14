@@ -1,44 +1,24 @@
 package main
 
 import (
-	"flag"
+	"github.com/dimiro1/banner"
 	"go.uber.org/zap"
+	"io/ioutil"
+	"kube-pod-terminator/pkg/logging"
+	"kube-pod-terminator/pkg/options"
 	"kube-pod-terminator/pkg/scheduler"
-	"log"
 	"os"
-	"path/filepath"
+	"strings"
 	"time"
 )
 
-var (
-	masterUrl, kubeConfigPath, namespace string
-	tickerIntervalMin, channelCapacity   int
-	gracePeriodSeconds                   int64
-	logger                               *zap.Logger
-	err                                  error
-	inCluster                            bool
-)
+var logger *zap.Logger
 
 func init() {
-	flag.StringVar(&masterUrl, "masterUrl", "", "Cluster master ip to access")
-	flag.BoolVar(&inCluster, "inCluster", true, "Specify if kube-pod-terminator is running in cluster")
-	flag.StringVar(&kubeConfigPath, "kubeConfigPath", filepath.Join(os.Getenv("HOME"), ".kube", "config"),
-		"Kube config file path to access cluster. Required while running out of Kubernetes cluster")
-	flag.StringVar(&namespace, "namespace", "default", "Namespace to run on. Defaults to default namespace")
-	flag.IntVar(&tickerIntervalMin, "tickerIntervalMin", 5, "Interval of scheduled job to run")
-	flag.IntVar(&channelCapacity, "channelCapacity", 10, "Channel capacity for concurrency")
-	flag.Int64Var(&gracePeriodSeconds, "gracePeriodSeconds", 30, "Grace period to delete pods")
-	flag.Parse()
+	logger = logging.GetLogger()
 
-	logger, err = zap.NewProduction()
-	if err != nil {
-		panic(err)
-	}
-
-	logger.Info("fetched arguments", zap.String("masterUrl", masterUrl),
-		zap.String("kubeConfigPath", kubeConfigPath), zap.String("namespace", namespace),
-		zap.Int("ticketIntervalMin", tickerIntervalMin), zap.Int("channelCapacity", channelCapacity),
-		zap.Int64("gracePeriodSeconds", gracePeriodSeconds))
+	bannerBytes, _ := ioutil.ReadFile("banner.txt")
+	banner.Init(os.Stdout, true, false, strings.NewReader(string(bannerBytes)))
 }
 
 func main() {
@@ -49,21 +29,22 @@ func main() {
 		}
 	}()
 
-	config, err := scheduler.GetConfig(masterUrl, kubeConfigPath, inCluster)
+	kpto := options.GetKubePodTerminatorOptions()
+	config, err := scheduler.GetConfig(kpto.MasterUrl, kpto.KubeConfigPath, kpto.InCluster)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatal("a fatal error occured while getting config", zap.Error(err))
 	}
 
 	// Create an rest client not targeting specific API version
 	clientSet, err := scheduler.GetClientSet(config)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatal("a fatal error occured while getting clientset", zap.Error(err))
 	}
 
-	scheduler.Run(namespace, clientSet, channelCapacity, gracePeriodSeconds, logger)
-	ticker := time.NewTicker(time.Duration(int32(tickerIntervalMin)) * time.Minute)
+	scheduler.Run(kpto.Namespace, clientSet, kpto.ChannelCapacity, kpto.GracePeriodSeconds)
+	ticker := time.NewTicker(time.Duration(int32(kpto.TickerIntervalMin)) * time.Minute)
 	for range ticker.C {
-		scheduler.Run(namespace, clientSet, channelCapacity, gracePeriodSeconds, logger)
+		scheduler.Run(kpto.Namespace, clientSet, kpto.ChannelCapacity, kpto.GracePeriodSeconds)
 	}
 	select {}
 }
