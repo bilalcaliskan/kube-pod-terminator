@@ -29,6 +29,11 @@ via [sample config file](config/sample.yaml). Here is the list of arguments you 
 --gracePeriodSeconds    Grace period to delete pods. Defaults to 30. 
 ```
 
+### Development
+This project requires below tools while developing:
+- [pre-commit](https://pre-commit.com/)
+- [golangci-lint](https://golangci-lint.run/usage/install/) - required by [pre-commit](https://pre-commit.com/)
+
 ### How kube-pod-terminator handles authentication/authorization with kube-apiserver?
 
 kube-pod-terminator uses [client-go](https://github.com/kubernetes/client-go) to interact
