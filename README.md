@@ -8,16 +8,16 @@ in Kubernetes cluster and connects to the kube-apiserver, discovers Terminating 
 more than 30 minutes.
 
 ## Deployment
-Kube-pod-terminator can be deployed as Kubernetes deployment or standalone installation. You can use [sample config file](config/sample.yaml) to deploy your Kubernetes cluster.
+Kube-pod-terminator can be deployed as Kubernetes deployment or standalone installation. You can use [sample deployment file](deployment/sample.yaml) to deploy your Kubernetes cluster.
 This file also creates required `Role` and `RoleBindings` to take actions on problematic pods.
 
 ```shell
-$ kubectl create -f config/sample.yaml
+$ kubectl create -f deployment/sample.yaml
 ```
 
 ### Customization
 Kube-pod-terminator can be customized with several command line arguments. You can pass arguments
-via [sample config file](config/sample.yaml). Here is the list of arguments you can pass:
+via [sample deployment file](deployment/sample.yaml). Here is the list of arguments you can pass:
 
 ```
 --inCluster             Specify if kube-pod-terminator is running in cluster. Defaults to true
@@ -40,7 +40,7 @@ kube-pod-terminator uses [client-go](https://github.com/kubernetes/client-go) to
 with `kube-apiserver`. [client-go](https://github.com/kubernetes/client-go) uses the [service account token](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/)
 mounted inside the Pod at the `/var/run/secrets/kubernetes.io/serviceaccount` path while initializing the client.
 
-If you have RBAC enabled on your cluster, when you applied the sample deployment file [config/sample.yaml](config/sample.yaml),
+If you have RBAC enabled on your cluster, when you applied the sample deployment file [deployment/sample.yaml](deployment/sample.yaml),
 it will create required serviceaccount, role and rolebinding and then use that serviceaccount to be used
 by our kube-pod-terminator pods.
 
