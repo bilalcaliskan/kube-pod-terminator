@@ -2,22 +2,15 @@
 [![CI](https://github.com/bilalcaliskan/kube-pod-terminator/workflows/CI/badge.svg?event=push)](https://github.com/bilalcaliskan/kube-pod-terminator/actions?query=workflow%3ACI)
 [![Docker pulls](https://img.shields.io/docker/pulls/bilalcaliskan/kube-pod-terminator)](https://hub.docker.com/r/bilalcaliskan/kube-pod-terminator/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bilalcaliskan/kube-pod-terminator)](https://goreportcard.com/report/github.com/bilalcaliskan/kube-pod-terminator)
+[![codecov](https://codecov.io/gh/bilalcaliskan/kube-pod-terminator/branch/master/graph/badge.svg)](https://codecov.io/gh/bilalcaliskan/kube-pod-terminator)
 
 On some Kubernetes versions, there is a problem that pods stuck in `Terminating` status on some circumstances. This tool runs
 in Kubernetes cluster and connects to the kube-apiserver, discovers Terminating pods which are in `Terminating` status
 more than 30 minutes.
 
-## Deployment
-Kube-pod-terminator can be deployed as Kubernetes deployment or standalone installation. You can use [sample deployment file](deployment/sample.yaml) to deploy your Kubernetes cluster.
-This file also creates required `Role` and `RoleBindings` to take actions on problematic pods.
-
-```shell
-$ kubectl create -f deployment/sample.yaml
-```
-
-### Customization
+## Configuration
 Kube-pod-terminator can be customized with several command line arguments. You can pass arguments
-via [sample deployment file](deployment/sample.yaml). Here is the list of arguments you can pass:
+via [sample deployment file](deployment/sample.yaml) or directly to the binary. Here is the list of arguments you can pass:
 
 ```
 --inCluster             Specify if kube-pod-terminator is running in cluster. Defaults to true
@@ -29,12 +22,33 @@ via [sample deployment file](deployment/sample.yaml). Here is the list of argume
 --gracePeriodSeconds    Grace period to delete pods. Defaults to 30.
 ```
 
-### Development
+## Installation
+Kube-pod-terminator can be deployed as Kubernetes deployment or standalone installation
+### Kubernetes
+You can use [sample deployment file](deployment/sample.yaml) to deploy your Kubernetes cluster.
+This file also creates required `Role` and `RoleBindings` to take actions on problematic pods.
+
+```shell
+$ kubectl create -f deployment/sample.yaml
+```
+
+### Binary
+Binary can be downloaded from [Releases](https://github.com/bilalcaliskan/kube-pod-terminator/releases) page. You can
+use that method to run kube-pod-terminator outside of a Kubernetes cluster.
+
+After then, you can simply run binary by providing required command line arguments:
+```shell
+$ ./kube-pod-terminator --inCluster false --kubeConfigPath ~/.kube/config
+```
+
+> Critical command line arguments while running kube-pod-terminator as standalone application are **--inCluster**, **--kubeConfigPath**
+
+## Development
 This project requires below tools while developing:
 - [pre-commit](https://pre-commit.com/)
 - [golangci-lint](https://golangci-lint.run/usage/install/) - required by [pre-commit](https://pre-commit.com/)
 
-### How kube-pod-terminator handles authentication/authorization with kube-apiserver?
+## How kube-pod-terminator handles authentication/authorization with kube-apiserver?
 
 kube-pod-terminator uses [client-go](https://github.com/kubernetes/client-go) to interact
 with `kube-apiserver`. [client-go](https://github.com/kubernetes/client-go) uses the [service account token](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/)
