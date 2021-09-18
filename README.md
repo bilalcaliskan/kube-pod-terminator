@@ -3,6 +3,9 @@
 [![Docker pulls](https://img.shields.io/docker/pulls/bilalcaliskan/kube-pod-terminator)](https://hub.docker.com/r/bilalcaliskan/kube-pod-terminator/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bilalcaliskan/kube-pod-terminator)](https://goreportcard.com/report/github.com/bilalcaliskan/kube-pod-terminator)
 [![codecov](https://codecov.io/gh/bilalcaliskan/kube-pod-terminator/branch/master/graph/badge.svg)](https://codecov.io/gh/bilalcaliskan/kube-pod-terminator)
+[![Release](https://img.shields.io/github/release/bilalcaliskan/kube-pod-terminator.svg)](https://github.com/bilalcaliskan/kube-pod-terminator/releases/latest)
+[![Go version](https://img.shields.io/github/go-mod/go-version/bilalcaliskan/kube-pod-terminator)](https://github.com/bilalcaliskan/kube-pod-terminator)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 On some Kubernetes versions, there is a problem that pods stuck in `Terminating` status on some circumstances. This tool runs
 in Kubernetes cluster and connects to the kube-apiserver, discovers Terminating pods which are in `Terminating` status
@@ -24,6 +27,7 @@ via [sample deployment file](deployment/sample.yaml) or directly to the binary. 
 
 ## Installation
 Kube-pod-terminator can be deployed as Kubernetes deployment or standalone installation
+
 ### Kubernetes
 You can use [sample deployment file](deployment/sample.yaml) to deploy your Kubernetes cluster.
 This file also creates required `Role` and `RoleBindings` to take actions on problematic pods.
@@ -45,8 +49,12 @@ $ ./kube-pod-terminator --inCluster false --kubeConfigPath ~/.kube/config
 
 ## Development
 This project requires below tools while developing:
+- [Golang 1.16](https://golang.org/doc/go1.16)
 - [pre-commit](https://pre-commit.com/)
 - [golangci-lint](https://golangci-lint.run/usage/install/) - required by [pre-commit](https://pre-commit.com/)
+
+## License
+Apache License 2.0
 
 ## How kube-pod-terminator handles authentication/authorization with kube-apiserver?
 
