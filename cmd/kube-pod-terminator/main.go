@@ -12,7 +12,10 @@ import (
 	"time"
 )
 
-var logger *zap.Logger
+var (
+	logger            *zap.Logger
+	kubeConfigPathArr []string
+)
 
 func init() {
 	logger = logging.GetLogger()
@@ -30,21 +33,30 @@ func main() {
 	}()
 
 	kpto := options.GetKubePodTerminatorOptions()
-	config, err := scheduler.GetConfig(kpto.MasterUrl, kpto.KubeConfigPath, kpto.InCluster)
-	if err != nil {
-		logger.Fatal("a fatal error occured while getting config", zap.Error(err))
+	kubeConfigPathArr = strings.Split(kpto.KubeConfigPaths, ",")
+	for _, path := range kubeConfigPathArr {
+		go func(p string) {
+			logger.Info("starting generating clientset for kubeconfig", zap.Bool("inCluster", kpto.InCluster),
+				zap.String("kubeConfigPath", p))
+			restConfig, err := scheduler.GetConfig(p, kpto.InCluster)
+			if err != nil {
+				logger.Fatal("fatal error occurred while getting k8s config", zap.String("error", err.Error()),
+					zap.Bool("inCluster", kpto.InCluster), zap.String("kubeConfigPath", p))
+			}
+
+			clientSet, err := scheduler.GetClientSet(restConfig)
+			if err != nil {
+				logger.Fatal("fatal error occurred while getting clientset", zap.String("error", err.Error()),
+					zap.Bool("inCluster", kpto.InCluster), zap.String("kubeConfigPath", p))
+			}
+
+			scheduler.Run(kpto.Namespace, clientSet, kpto.ChannelCapacity, kpto.GracePeriodSeconds, kpto.InCluster, p)
+			ticker := time.NewTicker(time.Duration(int32(kpto.TickerIntervalMin)) * time.Minute)
+			for range ticker.C {
+				scheduler.Run(kpto.Namespace, clientSet, kpto.ChannelCapacity, kpto.GracePeriodSeconds, kpto.InCluster, p)
+			}
+		}(path)
 	}
 
-	// Create an rest client not targeting specific API version
-	clientSet, err := scheduler.GetClientSet(config)
-	if err != nil {
-		logger.Fatal("a fatal error occured while getting clientset", zap.Error(err))
-	}
-
-	scheduler.Run(kpto.Namespace, clientSet, kpto.ChannelCapacity, kpto.GracePeriodSeconds)
-	ticker := time.NewTicker(time.Duration(int32(kpto.TickerIntervalMin)) * time.Minute)
-	for range ticker.C {
-		scheduler.Run(kpto.Namespace, clientSet, kpto.ChannelCapacity, kpto.GracePeriodSeconds)
-	}
 	select {}
 }

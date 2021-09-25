@@ -11,14 +11,14 @@ import (
 )
 
 // GetConfig gets parameters to generate rest.Config and returns it
-func GetConfig(masterUrl, kubeConfigPath string, inCluster bool) (*rest.Config, error) {
+func GetConfig(kubeConfigPath string, inCluster bool) (*rest.Config, error) {
 	var config *rest.Config
 	var err error
 
 	if inCluster {
 		config, err = rest.InClusterConfig()
 	} else {
-		config, err = clientcmd.BuildConfigFromFlags(masterUrl, kubeConfigPath)
+		config, err = clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 	}
 
 	if err != nil {
