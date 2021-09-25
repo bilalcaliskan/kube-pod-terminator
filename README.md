@@ -7,8 +7,8 @@
 [![Go version](https://img.shields.io/github/go-mod/go-version/bilalcaliskan/kube-pod-terminator)](https://github.com/bilalcaliskan/kube-pod-terminator)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-On some Kubernetes versions, there is a problem that pods stuck in `Terminating` status on some circumstances. This tool runs
-in Kubernetes cluster and connects to the kube-apiserver, discovers Terminating pods which are in `Terminating` status
+On some Kubernetes versions, there is a problem that pods stuck in **Terminating** status on some circumstances. This tool runs
+in Kubernetes cluster and connects to the **kube-apiserver**, discovers Terminating pods which are in **Terminating** status
 more than 30 minutes.
 
 ## Configuration
@@ -17,20 +17,34 @@ via [sample deployment file](deployment/sample.yaml) or directly to the binary. 
 
 ```
 --inCluster             Specify if kube-pod-terminator is running in cluster. Defaults to true
---masterUrl             Cluster master ip to access. Defaults to "".
---kubeConfigPath        Kube config file path to access cluster. Required while running out of Kubernetes cluster.
+--kubeConfigPath        Comma seperated list of kubeconfig files path to access clusters. Required while running out of Kubernetes cluster.
 --namespace             Namespace to run on. Defaults to "default" namespace.
 --tickerIntervalMin     Kube-pod-terminator runs as scheduled job. This argument is the interval of scheduled job to run. Defaults to 5.
 --channelCapacity       Channel capacity for concurrency. Defaults to 10.
 --gracePeriodSeconds    Grace period to delete pods. Defaults to 30.
 ```
 
+### Multi Cluster support
+kube-pod-terminator can terminate the pods of multiple clusters if multiple kubeconfig file path is provided
+to **--kubeConfigPath** flag.
+
+If you run the kube-pod-terminator inside a Kubernetes cluster, it manages the terminating pods of that current
+cluster by default. But keep in mind that if you want to manage terminating pods on multiple clusters
+and run kube-pod-terminator inside a Kubernetes cluster, you should mount multiple kubeconfig files as configmap or secret
+into pod and pass below arguments in your Deployment config:
+```
+--inCluster=false
+--kubeConfigPath=/tmp/kubeconfig1,/tmp/kubeconfig2,/tmp/kubeconfig3
+```
+
+You can check [deployment/sample_external_clusters.yaml](deployment/sample_external_clusters.yaml) as example.
+
 ## Installation
 Kube-pod-terminator can be deployed as Kubernetes deployment or standalone installation
 
 ### Kubernetes
 You can use [sample deployment file](deployment/sample.yaml) to deploy your Kubernetes cluster.
-This file also creates required `Role` and `RoleBindings` to take actions on problematic pods.
+This file also creates required **Role** and **RoleBindings** to take actions on problematic pods.
 
 ```shell
 $ kubectl create -f deployment/sample.yaml
@@ -45,7 +59,7 @@ After then, you can simply run binary by providing required command line argumen
 $ ./kube-pod-terminator --inCluster false --kubeConfigPath ~/.kube/config
 ```
 
-> Critical command line arguments while running kube-pod-terminator as standalone application are **--inCluster**, **--kubeConfigPath**
+> Critical command line arguments while running kube-pod-terminator as standalone application are **--inCluster**, **--kubeConfigPaths**
 
 ## Development
 This project requires below tools while developing:

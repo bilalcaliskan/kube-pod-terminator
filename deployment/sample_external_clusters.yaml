@@ -67,7 +67,8 @@ spec:
           args: [
               "--namespace", "default",
               "--tickerIntervalMin", "10",
-              "--inCluster=true"
+              "--inCluster=true",
+              "--kubeConfigPaths", "/tmp/kubeconfig1,/tmp/kubeconfig2,/tmp/kubeconfig3"
           ]
           imagePullPolicy: Always
           name: kube-pod-terminator
