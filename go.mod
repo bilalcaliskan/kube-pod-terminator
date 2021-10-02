@@ -7,14 +7,14 @@ require (
 	github.com/dimiro1/banner v1.1.0
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
-	github.com/mattn/go-isatty v0.0.13 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/spf13/pflag v1.0.5
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
-	go.uber.org/zap v1.19.0
-	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
+	go.uber.org/zap v1.19.1
+	golang.org/x/sys v0.0.0-20211001092434-39dca1131b70 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
-	k8s.io/api v0.22.0
-	k8s.io/apimachinery v0.22.0
-	k8s.io/client-go v0.22.0
+	k8s.io/api v0.22.2
+	k8s.io/apimachinery v0.22.2
+	k8s.io/client-go v0.22.2
 )
