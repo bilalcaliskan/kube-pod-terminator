@@ -39,6 +39,13 @@ into pod and pass below arguments in your Deployment config:
 
 You can check [deployment/sample_external_clusters.yaml](deployment/sample_external_clusters.yaml) as example.
 
+But before creating deployment file, you should create configmaps from your desired kubeconfigs like below:
+```shell
+$ kubectl create configmap cluster1-config --from-file=${YOUR_CLUSTER1_CONFIG_PATH}
+$ kubectl create configmap cluster2-config --from-file=${YOUR_CLUSTER2_CONFIG_PATH}
+$ kubectl create configmap cluster3-config --from-file=${YOUR_CLUSTER3_CONFIG_PATH}
+```
+
 ## Installation
 Kube-pod-terminator can be deployed as Kubernetes deployment or standalone installation
 

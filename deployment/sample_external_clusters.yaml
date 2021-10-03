@@ -68,7 +68,27 @@ spec:
               "--namespace", "default",
               "--tickerIntervalMin", "10",
               "--inCluster=true",
-              "--kubeConfigPaths", "/tmp/kubeconfig1,/tmp/kubeconfig2,/tmp/kubeconfig3"
+              "--kubeConfigPaths", "/opt/cluster1-config.yaml,/opt/cluster2-config.yaml,/opt/cluster3-config.yaml"
           ]
           imagePullPolicy: Always
           name: kube-pod-terminator
+          volumeMounts:
+            - name: cluster1-config
+              mountPath: /opt/cluster1-config.yaml
+              subPath: cluster1-config.yaml
+            - name: cluster2-config
+              mountPath: /opt/cluster2-config.yaml
+              subPath: cluster2-config.yaml
+            - name: cluster3-config
+              mountPath: /opt/cluster3-config.yaml
+              subPath: cluster3-config.yaml
+      volumes:
+        - name: cluster1-config
+          configMap:
+            name: cluster1-config
+        - name: cluster2-config
+          configMap:
+            name: cluster2-config
+        - name: cluster3-config
+          configMap:
+            name: cluster3-config
