@@ -12,7 +12,7 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.19.1
-	golang.org/x/sys v0.0.0-20211001092434-39dca1131b70 // indirect
+	golang.org/x/sys v0.0.0-20211023085530-d6a326fbbf70 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	k8s.io/api v0.22.2
 	k8s.io/apimachinery v0.22.2

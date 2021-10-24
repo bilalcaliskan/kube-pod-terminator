@@ -32,6 +32,8 @@ type KubePodTerminatorOptions struct {
 	ChannelCapacity int
 	// GracePeriodSeconds is the grace period to delete pods
 	GracePeriodSeconds int64
+	// TerminateEvicted is a boolean flag to tell if terminating evicted pods is supported
+	TerminateEvicted bool
 }
 
 func (kpto *KubePodTerminatorOptions) addFlags(fs *pflag.FlagSet) {
