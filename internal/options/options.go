@@ -44,4 +44,5 @@ func (kpto *KubePodTerminatorOptions) addFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&kpto.TickerIntervalMin, "tickerIntervalMin", 5, "Interval of scheduled job to run")
 	fs.IntVar(&kpto.ChannelCapacity, "channelCapacity", 10, "Channel capacity for concurrency")
 	fs.Int64Var(&kpto.GracePeriodSeconds, "gracePeriodSeconds", 30, "Grace period to delete pods")
+	fs.BoolVar(&kpto.TerminateEvicted, "terminateEvicted", true, "Terminate evicted pods in specified namespaces")
 }

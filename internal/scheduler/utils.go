@@ -52,3 +52,19 @@ func getTerminatingPods(clientSet *kubernetes.Clientset, namespace string) ([]v1
 	}
 	return resultSlice, nil
 }
+
+func getEvictedPods(clientSet *kubernetes.Clientset, namespace string) ([]v1.Pod, error) {
+	var evictedPods []v1.Pod
+	pods, err := clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, pod := range pods.Items {
+		if pod.Status.Reason == "Evicted" {
+			evictedPods = append(evictedPods, pod)
+		}
+	}
+
+	return evictedPods, nil
+}

@@ -50,10 +50,10 @@ func main() {
 					zap.Bool("inCluster", kpto.InCluster), zap.String("kubeConfigPath", p))
 			}
 
-			scheduler.Run(kpto.Namespace, clientSet, kpto.ChannelCapacity, kpto.GracePeriodSeconds, kpto.InCluster, p)
+			scheduler.Run(kpto.Namespace, clientSet, restConfig.Host)
 			ticker := time.NewTicker(time.Duration(int32(kpto.TickerIntervalMin)) * time.Minute)
 			for range ticker.C {
-				scheduler.Run(kpto.Namespace, clientSet, kpto.ChannelCapacity, kpto.GracePeriodSeconds, kpto.InCluster, p)
+				scheduler.Run(kpto.Namespace, clientSet, restConfig.Host)
 			}
 		}(path)
 	}
