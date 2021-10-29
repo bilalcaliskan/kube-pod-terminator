@@ -46,7 +46,7 @@ func getTerminatingPods(clientSet *kubernetes.Clientset, namespace string) ([]v1
 
 	for _, pod := range pods.Items {
 		deletionTimestamp := pod.ObjectMeta.DeletionTimestamp
-		if deletionTimestamp != nil && deletionTimestamp.Add(30*time.Minute).Before(time.Now()) {
+		if deletionTimestamp != nil && deletionTimestamp.Add(time.Duration(opts.TerminatingPodThreshold)*time.Minute).Before(time.Now()) {
 			resultSlice = append(resultSlice, pod)
 		}
 	}
@@ -61,7 +61,12 @@ func getEvictedPods(clientSet *kubernetes.Clientset, namespace string) ([]v1.Pod
 	}
 
 	for _, pod := range pods.Items {
-		if pod.Status.Reason == "Evicted" {
+		// if pod.Status.Reason == "Evicted" {
+		// if pod.Name == "cronjob-sample-1635125520-r6v5c" {
+		// logger.Info("fetched pod", zap.Any("pod", pod))
+		// }
+
+		if pod.Status.Phase == "Pending" {
 			evictedPods = append(evictedPods, pod)
 		}
 	}

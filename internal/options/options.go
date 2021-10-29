@@ -27,13 +27,15 @@ type KubePodTerminatorOptions struct {
 	// Namespace is the namespace of the kube-pod-terminator run on
 	Namespace string
 	// TickerIntervalMin is the Interval of scheduled job to run
-	TickerIntervalMin int
+	TickerIntervalMin int32
 	// ChannelCapacity is the capacity for concurrency
 	ChannelCapacity int
 	// GracePeriodSeconds is the grace period to delete pods
 	GracePeriodSeconds int64
 	// TerminateEvicted is a boolean flag to tell if terminating evicted pods is supported
 	TerminateEvicted bool
+	// TerminatingPodThreshold is the specifier to select pods which are more in terminating state
+	TerminatingPodThreshold int32
 }
 
 func (kpto *KubePodTerminatorOptions) addFlags(fs *pflag.FlagSet) {
@@ -41,8 +43,10 @@ func (kpto *KubePodTerminatorOptions) addFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&kpto.KubeConfigPaths, "kubeConfigPaths", filepath.Join(os.Getenv("HOME"), ".kube", "config"),
 		"comma separated list of kubeconfig file paths to access with the cluster")
 	fs.StringVar(&kpto.Namespace, "namespace", "default", "Namespace to run on. Defaults to default namespace")
-	fs.IntVar(&kpto.TickerIntervalMin, "tickerIntervalMin", 5, "Interval of scheduled job to run")
+	fs.Int32Var(&kpto.TickerIntervalMin, "tickerIntervalMin", 5, "Interval of scheduled job to run")
 	fs.IntVar(&kpto.ChannelCapacity, "channelCapacity", 10, "Channel capacity for concurrency")
 	fs.Int64Var(&kpto.GracePeriodSeconds, "gracePeriodSeconds", 30, "Grace period to delete pods")
 	fs.BoolVar(&kpto.TerminateEvicted, "terminateEvicted", true, "Terminate evicted pods in specified namespaces")
+	fs.Int32Var(&kpto.TerminatingPodThreshold, "terminatingPodThreshold", 30, "Terminate stucked pods "+
+		"in terminating state which are more than that value")
 }

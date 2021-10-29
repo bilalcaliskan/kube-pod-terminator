@@ -51,7 +51,7 @@ func main() {
 			}
 
 			scheduler.Run(kpto.Namespace, clientSet, restConfig.Host)
-			ticker := time.NewTicker(time.Duration(int32(kpto.TickerIntervalMin)) * time.Minute)
+			ticker := time.NewTicker(time.Duration(kpto.TickerIntervalMin) * time.Minute)
 			for range ticker.C {
 				scheduler.Run(kpto.Namespace, clientSet, restConfig.Host)
 			}

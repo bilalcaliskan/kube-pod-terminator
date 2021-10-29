@@ -18,11 +18,13 @@ var (
 )
 
 func init() {
-	logger = logging.GetLogger()
 	opts = options.GetKubePodTerminatorOptions()
+	logger = logging.GetLogger()
+	logger = logger.With(zap.Bool("inCluster", opts.InCluster), zap.String("namespace", opts.Namespace))
 	deleteOptions = metav1.DeleteOptions{GracePeriodSeconds: &opts.GracePeriodSeconds}
 }
 
+// terminatePods does the real job, terminates the items in the v1.Pod channel with specified clientSet
 func terminatePods(podChannel chan v1.Pod, wg *sync.WaitGroup, clientSet *kubernetes.Clientset, apiServer string) {
 	for pod := range podChannel {
 		err := clientSet.CoreV1().Pods(opts.Namespace).Delete(context.Background(), pod.Name, deleteOptions)
@@ -37,11 +39,10 @@ func terminatePods(podChannel chan v1.Pod, wg *sync.WaitGroup, clientSet *kubern
 	}
 }
 
+// addPodsToChannel adds items of v1.Pod slice to specified v1.Pod channel
 func addPodsToChannel(podChannel chan v1.Pod, wg *sync.WaitGroup, podSlice []v1.Pod, state, apiServer string) {
 	for _, pod := range podSlice {
-		logger.Info("adding pod to podChannel channel", zap.String("state", state),
-			zap.String("name", pod.Name), zap.String("namespace", pod.Namespace),
-			zap.Bool("inCluster", opts.InCluster), zap.String("apiServer", apiServer))
+		logger.Info("adding pod to podChannel channel", zap.String("state", state))
 		wg.Add(1)
 		podChannel <- pod
 	}
@@ -49,45 +50,35 @@ func addPodsToChannel(podChannel chan v1.Pod, wg *sync.WaitGroup, podSlice []v1.
 
 // Run operates the business logic, fetches the terminating and evicted pods and terminates them
 func Run(namespace string, clientSet *kubernetes.Clientset, apiServer string) {
-
+	logger = logger.With(zap.String("apiServer", apiServer))
 	podChannel := make(chan v1.Pod, opts.ChannelCapacity)
 	var wg sync.WaitGroup
 
 	terminatingPods, err := getTerminatingPods(clientSet, namespace)
 	if err != nil {
-		logger.Warn("an error occurred while getting terminating pods, skipping execution", zap.Error(err),
-			zap.Bool("inCluster", opts.InCluster), zap.String("apiServer", apiServer))
+		logger.Warn("an error occurred while getting terminating pods, skipping execution", zap.Error(err))
 		return
 	}
 
 	if len(terminatingPods) > 0 {
-		logger.Info("found pods", zap.String("state", "terminating"), zap.Int("podCount", len(terminatingPods)),
-			zap.String("namespace", namespace), zap.Bool("inCluster", opts.InCluster), zap.String("apiServer", apiServer))
-
+		logger.Info("found pods", zap.String("state", "terminating"), zap.Int("podCount", len(terminatingPods)))
 		addPodsToChannel(podChannel, &wg, terminatingPods, "terminating", apiServer)
 	} else {
-		logger.Info("no pod found, skipping execution", zap.String("state", "terminating"),
-			zap.String("namespace", namespace), zap.Bool("inCluster", opts.InCluster),
-			zap.String("apiServer", apiServer))
+		logger.Info("no pod found, skipping execution", zap.String("state", "terminating"))
 	}
 
 	if opts.TerminateEvicted {
 		evictedPods, err := getEvictedPods(clientSet, namespace)
 		if err != nil {
-			logger.Warn("an error occurred while getting terminating pods, skipping execution", zap.Error(err),
-				zap.Bool("inCluster", opts.InCluster), zap.String("apiServer", apiServer))
+			logger.Warn("an error occurred while getting terminating pods, skipping execution", zap.Error(err))
 			return
 		}
 
 		if len(evictedPods) > 0 {
-			logger.Info("found pods", zap.String("state", "evicted"), zap.Int("podCount", len(terminatingPods)),
-				zap.String("namespace", namespace), zap.Bool("inCluster", opts.InCluster), zap.String("apiServer", apiServer))
-
-			addPodsToChannel(podChannel, &wg, terminatingPods, "terminating", apiServer)
+			logger.Info("found pods", zap.String("state", "evicted"), zap.Int("podCount", len(evictedPods)))
+			addPodsToChannel(podChannel, &wg, evictedPods, "evicted", apiServer)
 		} else {
-			logger.Info("no pod found, skipping execution", zap.String("state", "evicted"),
-				zap.String("namespace", namespace), zap.Bool("inCluster", opts.InCluster),
-				zap.String("apiServer", apiServer))
+			logger.Info("no pod found, skipping execution", zap.String("state", "evicted"))
 		}
 	} else {
 		logger.Info("will not terminate evicted pods since --terminateEvicted=false argument passed")
@@ -95,6 +86,6 @@ func Run(namespace string, clientSet *kubernetes.Clientset, apiServer string) {
 
 	terminatePods(podChannel, &wg, clientSet, apiServer)
 	wg.Wait()
+	logger.Info("closing channel")
 	close(podChannel)
-
 }
