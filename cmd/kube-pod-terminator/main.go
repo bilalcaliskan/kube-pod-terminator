@@ -15,10 +15,13 @@ import (
 var (
 	logger            *zap.Logger
 	kubeConfigPathArr []string
+	kpto              *options.KubePodTerminatorOptions
 )
 
 func init() {
+	kpto = options.GetKubePodTerminatorOptions()
 	logger = logging.GetLogger()
+	logger = logger.With(zap.Bool("inCluster", kpto.InCluster))
 
 	bannerBytes, _ := ioutil.ReadFile("banner.txt")
 	banner.Init(os.Stdout, true, false, strings.NewReader(string(bannerBytes)))
@@ -32,22 +35,20 @@ func main() {
 		}
 	}()
 
-	kpto := options.GetKubePodTerminatorOptions()
 	kubeConfigPathArr = strings.Split(kpto.KubeConfigPaths, ",")
 	for _, path := range kubeConfigPathArr {
 		go func(p string) {
-			logger.Info("starting generating clientset for kubeconfig", zap.Bool("inCluster", kpto.InCluster),
-				zap.String("kubeConfigPath", p))
+			logger.Info("starting generating clientset for kubeconfig", zap.String("kubeConfigPath", p))
 			restConfig, err := scheduler.GetConfig(p, kpto.InCluster)
 			if err != nil {
 				logger.Fatal("fatal error occurred while getting k8s config", zap.String("error", err.Error()),
-					zap.Bool("inCluster", kpto.InCluster), zap.String("kubeConfigPath", p))
+					zap.String("kubeConfigPath", p))
 			}
 
 			clientSet, err := scheduler.GetClientSet(restConfig)
 			if err != nil {
 				logger.Fatal("fatal error occurred while getting clientset", zap.String("error", err.Error()),
-					zap.Bool("inCluster", kpto.InCluster), zap.String("kubeConfigPath", p))
+					zap.String("kubeConfigPath", p))
 			}
 
 			scheduler.Run(kpto.Namespace, clientSet, restConfig.Host)
