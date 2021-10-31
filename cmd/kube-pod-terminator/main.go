@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/dimiro1/banner"
 	"go.uber.org/zap"
 	"io/ioutil"
@@ -38,23 +39,23 @@ func main() {
 	kubeConfigPathArr = strings.Split(kpto.KubeConfigPaths, ",")
 	for _, path := range kubeConfigPathArr {
 		go func(p string) {
-			logger.Info("starting generating clientset for kubeconfig", zap.String("kubeConfigPath", p))
+			logger = logger.With(zap.String("kubeConfigPath", p))
+			logger.Info("starting generating clientset for kubeconfig")
 			restConfig, err := scheduler.GetConfig(p, kpto.InCluster)
 			if err != nil {
-				logger.Fatal("fatal error occurred while getting k8s config", zap.String("error", err.Error()),
-					zap.String("kubeConfigPath", p))
+				logger.Fatal("fatal error occurred while getting k8s config", zap.String("error", err.Error()))
 			}
 
 			clientSet, err := scheduler.GetClientSet(restConfig)
 			if err != nil {
-				logger.Fatal("fatal error occurred while getting clientset", zap.String("error", err.Error()),
-					zap.String("kubeConfigPath", p))
+				logger.Fatal("fatal error occurred while getting clientset", zap.String("error", err.Error()))
 			}
-
-			scheduler.Run(kpto.Namespace, clientSet, restConfig.Host)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(kpto.ContextTimeoutSecond)*time.Second)
+			defer cancel()
+			scheduler.Run(ctx, kpto.Namespace, clientSet, restConfig.Host)
 			ticker := time.NewTicker(time.Duration(kpto.TickerIntervalMin) * time.Minute)
 			for range ticker.C {
-				scheduler.Run(kpto.Namespace, clientSet, restConfig.Host)
+				scheduler.Run(ctx, kpto.Namespace, clientSet, restConfig.Host)
 			}
 		}(path)
 	}

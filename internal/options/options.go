@@ -36,6 +36,8 @@ type KubePodTerminatorOptions struct {
 	TerminateEvicted bool
 	// TerminatingPodThreshold is the specifier to select pods which are more in terminating state
 	TerminatingPodThreshold int32
+	// ContextTimeoutSecond is the specifier for context to decide when to timeout while talking to apiserver
+	ContextTimeoutSecond int32
 }
 
 func (kpto *KubePodTerminatorOptions) addFlags(fs *pflag.FlagSet) {
@@ -49,4 +51,6 @@ func (kpto *KubePodTerminatorOptions) addFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&kpto.TerminateEvicted, "terminateEvicted", true, "Terminate evicted pods in specified namespaces")
 	fs.Int32Var(&kpto.TerminatingPodThreshold, "terminatingPodThreshold", 30, "Terminate stucked pods "+
 		"in terminating state which are more than that value")
+	fs.Int32Var(&kpto.ContextTimeoutSecond, "contextTimeoutSecond", 1, "When to timeout request context "+
+		"while talking to apiserver")
 }

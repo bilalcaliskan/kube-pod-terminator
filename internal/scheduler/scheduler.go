@@ -47,14 +47,14 @@ func addPodsToChannel(podChannel chan v1.Pod, wg *sync.WaitGroup, podSlice []v1.
 }
 
 // Run operates the business logic, fetches the terminating and evicted pods and terminates them
-func Run(namespace string, clientSet *kubernetes.Clientset, apiServer string) {
+func Run(ctx context.Context, namespace string, clientSet *kubernetes.Clientset, apiServer string) {
 	logger = logger.With(zap.String("apiServer", apiServer))
 	podChannel := make(chan v1.Pod, opts.ChannelCapacity)
-	// done := make(chan bool)
 	var wg sync.WaitGroup
+
 	go terminatePods(podChannel, &wg, clientSet, apiServer)
 
-	terminatingPods, err := getTerminatingPods(clientSet, namespace)
+	terminatingPods, err := getTerminatingPods(ctx, clientSet, namespace)
 	if err != nil {
 		logger.Warn("an error occurred while getting terminating pods, skipping execution", zap.Error(err))
 		return
@@ -68,7 +68,7 @@ func Run(namespace string, clientSet *kubernetes.Clientset, apiServer string) {
 	}
 
 	if opts.TerminateEvicted {
-		evictedPods, err := getEvictedPods(clientSet, namespace)
+		evictedPods, err := getEvictedPods(ctx, clientSet, namespace)
 		if err != nil {
 			logger.Warn("an error occurred while getting terminating pods, skipping execution", zap.Error(err))
 			return

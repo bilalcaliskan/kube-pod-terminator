@@ -37,9 +37,9 @@ func GetClientSet(config *rest.Config) (*kubernetes.Clientset, error) {
 	return clientSet, nil
 }
 
-func getTerminatingPods(clientSet *kubernetes.Clientset, namespace string) ([]v1.Pod, error) {
+func getTerminatingPods(ctx context.Context, clientSet *kubernetes.Clientset, namespace string) ([]v1.Pod, error) {
 	var resultSlice []v1.Pod
-	pods, err := clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+	pods, err := clientSet.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -53,9 +53,9 @@ func getTerminatingPods(clientSet *kubernetes.Clientset, namespace string) ([]v1
 	return resultSlice, nil
 }
 
-func getEvictedPods(clientSet *kubernetes.Clientset, namespace string) ([]v1.Pod, error) {
+func getEvictedPods(ctx context.Context, clientSet *kubernetes.Clientset, namespace string) ([]v1.Pod, error) {
 	var evictedPods []v1.Pod
-	pods, err := clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+	pods, err := clientSet.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
