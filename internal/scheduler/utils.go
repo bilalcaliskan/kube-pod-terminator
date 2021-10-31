@@ -52,7 +52,7 @@ func getTerminatingPods(ctx context.Context, clientSet *kubernetes.Clientset, na
 
 	for _, pod := range pods.Items {
 		deletionTimestamp := pod.ObjectMeta.DeletionTimestamp
-		if deletionTimestamp != nil && deletionTimestamp.Add(time.Duration(opts.TerminatingPodThreshold)*time.Minute).Before(time.Now()) {
+		if deletionTimestamp != nil && deletionTimestamp.Add(time.Duration(opts.TerminatingStateMinutes)*time.Minute).Before(time.Now()) {
 			resultSlice = append(resultSlice, pod)
 		}
 	}

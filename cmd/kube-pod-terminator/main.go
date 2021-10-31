@@ -50,10 +50,10 @@ func main() {
 			if err != nil {
 				logger.Fatal("fatal error occurred while getting clientset", zap.String("error", err.Error()))
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(kpto.ContextTimeoutSecond)*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(kpto.ContextTimeoutSeconds)*time.Second)
 			defer cancel()
 			scheduler.Run(ctx, kpto.Namespace, clientSet, restConfig.Host)
-			ticker := time.NewTicker(time.Duration(kpto.TickerIntervalMin) * time.Minute)
+			ticker := time.NewTicker(time.Duration(kpto.TickerIntervalMinutes) * time.Minute)
 			for range ticker.C {
 				scheduler.Run(ctx, kpto.Namespace, clientSet, restConfig.Host)
 			}
