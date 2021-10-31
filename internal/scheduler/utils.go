@@ -12,8 +12,10 @@ import (
 
 // GetConfig gets parameters to generate rest.Config and returns it
 func GetConfig(kubeConfigPath string, inCluster bool) (*rest.Config, error) {
-	var config *rest.Config
-	var err error
+	var (
+		config *rest.Config
+		err    error
+	)
 
 	if inCluster {
 		config, err = rest.InClusterConfig()
@@ -38,9 +40,13 @@ func GetClientSet(config *rest.Config) (*kubernetes.Clientset, error) {
 }
 
 func getTerminatingPods(ctx context.Context, clientSet *kubernetes.Clientset, namespace string) ([]v1.Pod, error) {
-	var resultSlice []v1.Pod
-	pods, err := clientSet.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
+	var (
+		resultSlice []v1.Pod
+		pods        *v1.PodList
+		err         error
+	)
+
+	if pods, err = clientSet.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{}); err != nil {
 		return nil, err
 	}
 
@@ -50,23 +56,23 @@ func getTerminatingPods(ctx context.Context, clientSet *kubernetes.Clientset, na
 			resultSlice = append(resultSlice, pod)
 		}
 	}
+
 	return resultSlice, nil
 }
 
 func getEvictedPods(ctx context.Context, clientSet *kubernetes.Clientset, namespace string) ([]v1.Pod, error) {
-	var evictedPods []v1.Pod
-	pods, err := clientSet.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
+	var (
+		evictedPods []v1.Pod
+		pods        *v1.PodList
+		err         error
+	)
+
+	if pods, err = clientSet.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{}); err != nil {
 		return nil, err
 	}
 
 	for _, pod := range pods.Items {
-		// if pod.Status.Reason == "Evicted" {
-		// if pod.Name == "cronjob-sample-1635125520-r6v5c" {
-		// logger.Info("fetched pod", zap.Any("pod", pod))
-		// }
-
-		if pod.Status.Phase == "Pending" {
+		if pod.Status.Reason == "Evicted" {
 			evictedPods = append(evictedPods, pod)
 		}
 	}
