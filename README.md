@@ -16,12 +16,15 @@ Kube-pod-terminator can be customized with several command line arguments. You c
 via [sample deployment file](deployment/sample.yaml) or directly to the binary. Here is the list of arguments you can pass:
 
 ```
---inCluster             bool        Specify if kube-pod-terminator is running in cluster. Defaults to true
---kubeConfigPaths       string      Comma seperated list of kubeconfig files path to access clusters. Required while running out of Kubernetes cluster.
---namespace             string      Namespace to run on. Defaults to "default" namespace.
---tickerIntervalMin     int         Kube-pod-terminator runs as scheduled job. This argument is the interval of scheduled job to run. Defaults to 5.
---channelCapacity       int         Channel capacity for concurrency. Defaults to 10.
---gracePeriodSeconds    int         Grace period to delete pods. Defaults to 30.
+--inCluster                 bool        Specify if kube-pod-terminator is running in cluster. Defaults to true
+--kubeConfigPaths           string      Comma seperated list of kubeconfig files path to access clusters. Required while running out of Kubernetes cluster.
+--namespace                 string      Namespace to run on. Defaults to "default" namespace.
+--tickerIntervalMin         int32       Kube-pod-terminator runs as scheduled job. This argument is the interval of scheduled job to run. Defaults to 5.
+--terminatingStateMinutes   int32       Terminate stucked pods in terminating state which are more than that value. Defaults to 30.
+--channelCapacity           int         Channel capacity for concurrency. Defaults to 10.
+--gracePeriodSeconds        int64       Grace period to delete pods. Defaults to 30.
+--terminateEvicted          bool        Terminate evicted pods in specified namespaces. Defaults to true.
+--contextTimeoutSeconds     int32       When to timeout request context while talking to apiserver. Defaults to 1.
 ```
 
 ### Multi Cluster support
