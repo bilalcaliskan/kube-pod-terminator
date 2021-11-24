@@ -126,6 +126,7 @@ jobs:
   build:
     needs:
       - coverage
+      - sonarcloud
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest ]
