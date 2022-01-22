@@ -1,4 +1,4 @@
-package scheduler
+package k8s
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func init() {
 }
 
 // terminatePods does the real job, terminates the items in the v1.Pod channel with specified clientSet
-func terminatePods(podChannel chan v1.Pod, wg *sync.WaitGroup, clientSet *kubernetes.Clientset, apiServer string) {
+func terminatePods(podChannel chan v1.Pod, wg *sync.WaitGroup, clientSet kubernetes.Interface, apiServer string) {
 	for pod := range podChannel {
 		err := clientSet.CoreV1().Pods(opts.Namespace).Delete(context.Background(), pod.Name, deleteOptions)
 		if err != nil {
@@ -47,7 +47,7 @@ func addPodsToChannel(podChannel chan v1.Pod, wg *sync.WaitGroup, podSlice []v1.
 }
 
 // Run operates the business logic, fetches the terminating and evicted pods and terminates them
-func Run(ctx context.Context, namespace string, clientSet *kubernetes.Clientset, apiServer string) {
+func Run(ctx context.Context, namespace string, clientSet kubernetes.Interface, apiServer string) {
 	logger = logger.With(zap.String("apiServer", apiServer))
 	podChannel := make(chan v1.Pod, opts.ChannelCapacity)
 	var wg sync.WaitGroup
