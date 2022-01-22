@@ -20,7 +20,7 @@ var (
 func init() {
 	opts = options.GetKubePodTerminatorOptions()
 	logger = logging.GetLogger()
-	logger = logger.With(zap.Bool("inCluster", opts.InCluster), zap.String("namespace", opts.Namespace))
+	logger = logger.With(zap.Bool("inCluster", opts.InCluster))
 	deleteOptions = metav1.DeleteOptions{GracePeriodSeconds: &opts.GracePeriodSeconds}
 }
 
@@ -70,7 +70,7 @@ func Run(ctx context.Context, namespace string, clientSet kubernetes.Interface, 
 	if opts.TerminateEvicted {
 		evictedPods, err := getEvictedPods(ctx, clientSet, namespace)
 		if err != nil {
-			logger.Warn("an error occurred while getting terminating pods, skipping execution", zap.Error(err))
+			logger.Warn("an error occurred while getting evicted pods, skipping execution", zap.Error(err))
 			return
 		}
 

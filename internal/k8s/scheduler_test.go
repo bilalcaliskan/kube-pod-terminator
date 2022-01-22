@@ -170,6 +170,18 @@ func TestRunEvictedPods(t *testing.T) {
 	Run(ctx, api.Namespace, api.ClientSet, "")
 }
 
+func TestRunBrokenApiCall(t *testing.T) {
+	restConfig, err := GetConfig("../../mock/kubeconfig", false)
+	assert.Nil(t, err)
+	assert.NotNil(t, restConfig)
+
+	clientSet, err := GetClientSet(restConfig)
+	assert.Nil(t, err)
+	assert.NotNil(t, clientSet)
+
+	Run(context.Background(), "default", clientSet, "")
+}
+
 func TestRunTerminatingPods(t *testing.T) {
 	api := getFakeAPI()
 	assert.NotNil(t, api)
