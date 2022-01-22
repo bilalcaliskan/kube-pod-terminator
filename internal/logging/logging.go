@@ -9,7 +9,7 @@ import (
 var logger *zap.Logger
 
 func init() {
-	cfgConsole := zapcore.EncoderConfig{
+	logger = zap.New(zapcore.NewTee(zapcore.NewCore(zapcore.NewJSONEncoder(zapcore.EncoderConfig{
 		MessageKey:   "message",
 		LevelKey:     "severity",
 		EncodeLevel:  zapcore.LowercaseLevelEncoder,
@@ -17,11 +17,7 @@ func init() {
 		EncodeTime:   zapcore.RFC3339TimeEncoder,
 		CallerKey:    "caller",
 		EncodeCaller: zapcore.FullCallerEncoder,
-	}
-
-	core := zapcore.NewTee(zapcore.NewCore(zapcore.NewJSONEncoder(cfgConsole), zapcore.Lock(os.Stdout), zap.InfoLevel))
-	logger = zap.New(core)
-	logger.Info("An info level message")
+	}), zapcore.Lock(os.Stdout), zap.InfoLevel)))
 }
 
 // GetLogger returns the shared *zap.Logger

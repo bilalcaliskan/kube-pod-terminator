@@ -1,4 +1,4 @@
-package scheduler
+package k8s
 
 import (
 	"context"
@@ -18,19 +18,19 @@ func GetConfig(kubeConfigPath string, inCluster bool) (*rest.Config, error) {
 	)
 
 	if inCluster {
-		config, err = rest.InClusterConfig()
+		if config, err = rest.InClusterConfig(); err != nil {
+			return nil, err
+		}
 	} else {
-		config, err = clientcmd.BuildConfigFromFlags("", kubeConfigPath)
-	}
-
-	if err != nil {
-		return nil, err
+		if config, err = clientcmd.BuildConfigFromFlags("", kubeConfigPath); err != nil {
+			return nil, err
+		}
 	}
 
 	return config, nil
 }
 
-// GetClientSet generates and returns kubernetes.Clientset using rest.Config
+// GetClientSet generates and returns k8s.Clientset using rest.Config
 func GetClientSet(config *rest.Config) (*kubernetes.Clientset, error) {
 	clientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -39,7 +39,7 @@ func GetClientSet(config *rest.Config) (*kubernetes.Clientset, error) {
 	return clientSet, nil
 }
 
-func getTerminatingPods(ctx context.Context, clientSet *kubernetes.Clientset, namespace string) ([]v1.Pod, error) {
+func getTerminatingPods(ctx context.Context, clientSet kubernetes.Interface, namespace string) ([]v1.Pod, error) {
 	var (
 		resultSlice []v1.Pod
 		pods        *v1.PodList
@@ -60,7 +60,7 @@ func getTerminatingPods(ctx context.Context, clientSet *kubernetes.Clientset, na
 	return resultSlice, nil
 }
 
-func getEvictedPods(ctx context.Context, clientSet *kubernetes.Clientset, namespace string) ([]v1.Pod, error) {
+func getEvictedPods(ctx context.Context, clientSet kubernetes.Interface, namespace string) ([]v1.Pod, error) {
 	var (
 		evictedPods []v1.Pod
 		pods        *v1.PodList

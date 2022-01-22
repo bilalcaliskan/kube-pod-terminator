@@ -1,4 +1,4 @@
-package scheduler
+package k8s
 
 import (
 	"context"
@@ -20,12 +20,12 @@ var (
 func init() {
 	opts = options.GetKubePodTerminatorOptions()
 	logger = logging.GetLogger()
-	logger = logger.With(zap.Bool("inCluster", opts.InCluster), zap.String("namespace", opts.Namespace))
+	logger = logger.With(zap.Bool("inCluster", opts.InCluster))
 	deleteOptions = metav1.DeleteOptions{GracePeriodSeconds: &opts.GracePeriodSeconds}
 }
 
 // terminatePods does the real job, terminates the items in the v1.Pod channel with specified clientSet
-func terminatePods(podChannel chan v1.Pod, wg *sync.WaitGroup, clientSet *kubernetes.Clientset, apiServer string) {
+func terminatePods(podChannel chan v1.Pod, wg *sync.WaitGroup, clientSet kubernetes.Interface, apiServer string) {
 	for pod := range podChannel {
 		err := clientSet.CoreV1().Pods(opts.Namespace).Delete(context.Background(), pod.Name, deleteOptions)
 		if err != nil {
@@ -47,7 +47,7 @@ func addPodsToChannel(podChannel chan v1.Pod, wg *sync.WaitGroup, podSlice []v1.
 }
 
 // Run operates the business logic, fetches the terminating and evicted pods and terminates them
-func Run(ctx context.Context, namespace string, clientSet *kubernetes.Clientset, apiServer string) {
+func Run(ctx context.Context, namespace string, clientSet kubernetes.Interface, apiServer string) {
 	logger = logger.With(zap.String("apiServer", apiServer))
 	podChannel := make(chan v1.Pod, opts.ChannelCapacity)
 	var wg sync.WaitGroup
@@ -70,7 +70,7 @@ func Run(ctx context.Context, namespace string, clientSet *kubernetes.Clientset,
 	if opts.TerminateEvicted {
 		evictedPods, err := getEvictedPods(ctx, clientSet, namespace)
 		if err != nil {
-			logger.Warn("an error occurred while getting terminating pods, skipping execution", zap.Error(err))
+			logger.Warn("an error occurred while getting evicted pods, skipping execution", zap.Error(err))
 			return
 		}
 
@@ -84,9 +84,6 @@ func Run(ctx context.Context, namespace string, clientSet *kubernetes.Clientset,
 		logger.Info("will not terminate evicted pods since --terminateEvicted=false argument passed")
 	}
 
-	go func() {
-		wg.Wait()
-		logger.Info("closing channel")
-		close(podChannel)
-	}()
+	wg.Wait()
+	close(podChannel)
 }
