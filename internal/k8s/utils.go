@@ -18,13 +18,13 @@ func GetConfig(kubeConfigPath string, inCluster bool) (*rest.Config, error) {
 	)
 
 	if inCluster {
-		config, err = rest.InClusterConfig()
+		if config, err = rest.InClusterConfig(); err != nil {
+			return nil, err
+		}
 	} else {
-		config, err = clientcmd.BuildConfigFromFlags("", kubeConfigPath)
-	}
-
-	if err != nil {
-		return nil, err
+		if config, err = clientcmd.BuildConfigFromFlags("", kubeConfigPath); err != nil {
+			return nil, err
+		}
 	}
 
 	return config, nil

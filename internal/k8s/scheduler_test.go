@@ -85,3 +85,22 @@ func TestRun(t *testing.T) {
 	defer cancel()
 	Run(ctx, api.Namespace, api.ClientSet, "")
 }
+
+func TestGetClientSet(t *testing.T) {
+	restConfig, err := GetConfig("../../mock/kubeconfig", false)
+	assert.Nil(t, err)
+	assert.NotNil(t, restConfig)
+
+	clientSet, err := GetClientSet(restConfig)
+	assert.Nil(t, err)
+	assert.NotNil(t, clientSet)
+}
+
+/*func TestTerminatePods(t *testing.T) {
+	api := getFakeAPI()
+	assert.NotNil(t, api)
+	var wg sync.WaitGroup
+	podChannel := make(chan v1.Pod, opts.ChannelCapacity)
+	podChannel <- v1.Pod{}
+	terminatePods(podChannel, &wg, api.ClientSet, "")
+}*/
