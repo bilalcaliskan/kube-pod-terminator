@@ -77,6 +77,7 @@ func TestRun(t *testing.T) {
 			pod, err := api.createPod(tc.podName)
 			assert.Nil(t, err)
 			assert.NotNil(t, pod)
+			time.Sleep(2 * time.Second)
 		})
 	}
 
