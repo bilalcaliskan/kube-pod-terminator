@@ -94,6 +94,10 @@ func TestGetClientSet(t *testing.T) {
 	clientSet, err := GetClientSet(restConfig)
 	assert.Nil(t, err)
 	assert.NotNil(t, clientSet)
+
+	restConfig, err = GetConfig("../../mock/broken_kubeconfig", false)
+	assert.NotNil(t, err)
+	assert.Nil(t, restConfig)
 }
 
 /*func TestTerminatePods(t *testing.T) {
