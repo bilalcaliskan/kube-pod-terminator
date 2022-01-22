@@ -84,9 +84,6 @@ func Run(ctx context.Context, namespace string, clientSet kubernetes.Interface, 
 		logger.Info("will not terminate evicted pods since --terminateEvicted=false argument passed")
 	}
 
-	go func() {
-		wg.Wait()
-		logger.Info("closing channel")
-		close(podChannel)
-	}()
+	wg.Wait()
+	close(podChannel)
 }
