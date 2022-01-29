@@ -15,7 +15,8 @@ On some Kubernetes versions, there is a problem that pods stuck in **Terminating
 connects to the **kube-apiserver**, discovers Terminating pods which are in **Terminating** status more than **--terminatingStateMinutes**
 minutes, which is defaults to 30 minutes.
 
-This tool also discovers pods which are at **Evicted** state, and clears them all on **--tickerIntervalMin** which defaults to 5 minutes.
+This tool also discovers pods which are at **Evicted** state if **--terminateEvicted** passed(enabled by default) and 
+clears them all on **--tickerIntervalMin** which defaults to 5 minutes.
 
 Please note that **kube-pod-terminator** can work in Kubernetes cluster as Deployment, or outside of Kubernetes cluster as binary.
 Please refer to [Installation section](#installation) for more information.
