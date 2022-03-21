@@ -59,6 +59,7 @@ func (fAPI *FakeAPI) createTerminatingPod(name string, deletionTimestamp *metav1
 			Kind:       "Pod",
 			APIVersion: "v1",
 		},
+
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              name,
 			Namespace:         fAPI.Namespace,

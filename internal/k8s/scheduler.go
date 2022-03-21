@@ -27,11 +27,12 @@ func init() {
 // terminatePods does the real job, terminates the items in the v1.Pod channel with specified clientSet
 func terminatePods(podChannel chan v1.Pod, wg *sync.WaitGroup, clientSet kubernetes.Interface, apiServer string) {
 	for pod := range podChannel {
-		err := clientSet.CoreV1().Pods(opts.Namespace).Delete(context.Background(), pod.Name, deleteOptions)
-		if err != nil {
+		if err := clientSet.CoreV1().Pods(opts.Namespace).Delete(context.Background(), pod.Name, deleteOptions); err != nil {
 			logger.Warn("an error occured while deleting pod", zap.String("name", pod.Name),
 				zap.String("apiServer", apiServer))
+			continue
 		}
+
 		logger.Info("pod deleted", zap.String("name", pod.Name), zap.String("apiServer", apiServer))
 		wg.Done()
 	}
@@ -53,7 +54,6 @@ func Run(ctx context.Context, namespace string, clientSet kubernetes.Interface, 
 	var wg sync.WaitGroup
 
 	go terminatePods(podChannel, &wg, clientSet, apiServer)
-
 	terminatingPods, err := getTerminatingPods(ctx, clientSet, namespace)
 	if err != nil {
 		logger.Warn("an error occurred while getting terminating pods, skipping execution", zap.Error(err))
