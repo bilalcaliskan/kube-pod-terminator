@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	"kube-pod-terminator/internal/logging"
 	"sync"
 	"testing"
 	"time"
@@ -238,6 +239,6 @@ func TestTerminatePods(t *testing.T) {
 	wg.Add(1)
 	podChannel := make(chan v1.Pod, opts.ChannelCapacity)
 	podChannel <- v1.Pod{}
-	go terminatePods(podChannel, &wg, api.ClientSet, "")
+	go terminatePods(podChannel, &wg, api.ClientSet, logging.GetLogger())
 	wg.Wait()
 }

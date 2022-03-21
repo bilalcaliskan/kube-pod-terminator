@@ -23,18 +23,38 @@ Please refer to [Installation section](#installation) for more information.
 
 ## Configuration
 Kube-pod-terminator can be customized with several command line arguments. You can pass arguments
-via [sample deployment file](deployment/sample.yaml) or directly to the binary. Here is the list of arguments you can pass:
+via [sample deployment file](deployment/sample_single_namespace.yaml) or directly to the binary. Here is the list of arguments you can pass:
 
 ```
 --inCluster                 bool        Specify if kube-pod-terminator is running in cluster. Defaults to true
 --kubeConfigPaths           string      Comma seperated list of kubeconfig files path to access clusters. Required while running out of Kubernetes cluster.
---namespace                 string      Namespace to run on. Defaults to "default" namespace.
+--namespace                 string      Namespace to run on. Defaults to "default" namespace. Supports "all" option for all namespaces.
 --tickerIntervalMin         int32       Kube-pod-terminator runs as scheduled job. This argument is the interval of scheduled job to run. Defaults to 5.
 --terminatingStateMinutes   int32       Terminate stucked pods in terminating state which are more than that value. Defaults to 30.
 --channelCapacity           int         Channel capacity for concurrency. Defaults to 10.
 --gracePeriodSeconds        int64       Grace period to delete pods. Defaults to 30.
 --terminateEvicted          bool        Terminate evicted pods in specified namespaces. Defaults to true.
 --contextTimeoutSeconds     int32       When to timeout request context while talking to apiserver. Defaults to 1.
+```
+
+## Installation
+Kube-pod-terminator can be deployed as Kubernetes deployment or standalone installation
+
+### Kubernetes
+You can use [sample deployment file](deployment/sample_single_namespace.yaml) to deploy your Kubernetes cluster.
+This file also creates required **Role** and **RoleBindings** to take actions on problematic pods.
+
+```shell
+$ kubectl create -f deployment/sample_single_namespace.yaml
+```
+
+### All namespaces support
+By default, kube-pod-terminator runs to terminate pods in `default` namespace. But that behavior can be changed with
+`namespace` flag. You can see the example Kubernetes manifest file [deployment/sample_all_namespaces.yaml](deployment/sample_all_namespaces.yaml). 
+Keep in mind that this file creates necessary `ClusterRole` and `ClusterRoleBinding` to be able to take proper actions on all 
+namespaces.
+```
+--namespace=all
 ```
 
 ### Multi Cluster support
@@ -57,17 +77,6 @@ But before creating deployment file, you should create configmaps from your desi
 $ kubectl create configmap cluster1-config --from-file=${YOUR_CLUSTER1_CONFIG_PATH}
 $ kubectl create configmap cluster2-config --from-file=${YOUR_CLUSTER2_CONFIG_PATH}
 $ kubectl create configmap cluster3-config --from-file=${YOUR_CLUSTER3_CONFIG_PATH}
-```
-
-## Installation
-Kube-pod-terminator can be deployed as Kubernetes deployment or standalone installation
-
-### Kubernetes
-You can use [sample deployment file](deployment/sample.yaml) to deploy your Kubernetes cluster.
-This file also creates required **Role** and **RoleBindings** to take actions on problematic pods.
-
-```shell
-$ kubectl create -f deployment/sample.yaml
 ```
 
 ### Binary
@@ -96,7 +105,7 @@ kube-pod-terminator uses [client-go](https://github.com/kubernetes/client-go) to
 with `kube-apiserver`. [client-go](https://github.com/kubernetes/client-go) uses the [service account token](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/)
 mounted inside the Pod at the `/var/run/secrets/kubernetes.io/serviceaccount` path while initializing the client.
 
-If you have RBAC enabled on your cluster, when you applied the sample deployment file [deployment/sample.yaml](deployment/sample.yaml),
+If you have RBAC enabled on your cluster, when you applied the sample deployment file [deployment/sample.yaml](deployment/sample_single_namespace.yaml),
 it will create required serviceaccount, role and rolebinding and then use that serviceaccount to be used
 by our kube-pod-terminator pods.
 

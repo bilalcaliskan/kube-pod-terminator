@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: kube-pod-terminator-sa
+  name: kube-pod-terminator
   namespace: default
 
 ---
@@ -11,7 +11,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: kube-pod-terminator-role
+  name: kube-pod-terminator
   namespace: default
 rules:
   - apiGroups:
@@ -33,10 +33,10 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: kube-pod-terminator-role
+  name: kube-pod-terminator
 subjects:
   - kind: ServiceAccount
-    name: kube-pod-terminator-sa
+    name: kube-pod-terminator
     namespace: default
 
 ---
@@ -47,6 +47,7 @@ metadata:
   labels:
     app: kube-pod-terminator
   name: kube-pod-terminator
+  namespace: default
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -60,7 +61,7 @@ spec:
         app: kube-pod-terminator
         deployment: kube-pod-terminator
     spec:
-      serviceAccountName: kube-pod-terminator-sa
+      serviceAccountName: kube-pod-terminator
       containers:
         - image: 'docker.io/bilalcaliskan/kube-pod-terminator:latest'
           command: ["./main"]
