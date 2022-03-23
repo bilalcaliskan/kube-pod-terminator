@@ -55,22 +55,27 @@ func getTerminatingPods(ctx context.Context, clientSet kubernetes.Interface, nam
 			return nil, err
 		}
 	} else {
-		nsFieldSelector := fields.ParseSelectorOrDie(fmt.Sprintf("metadata.name=%s", namespace))
+		/*nsFieldSelector := fields.ParseSelectorOrDie(fmt.Sprintf("metadata.name=%s", namespace))
 		if namespaces, err = clientSet.CoreV1().Namespaces().List(ctx, metav1.ListOptions{
 			FieldSelector: nsFieldSelector.String(),
 		}); err != nil {
 			return nil, err
+		}*/
+		var ns *v1.Namespace
+		if ns, err = clientSet.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{}); err != nil {
+			return nil, err
 		}
+
+		namespaces.Items = append(namespaces.Items, *ns)
 	}
 
 	for _, v := range namespaces.Items {
-		if nsPods, err := clientSet.CoreV1().Pods(v.Name).List(ctx, metav1.ListOptions{}); err != nil {
+		var nsPods *v1.PodList
+		if nsPods, err = clientSet.CoreV1().Pods(v.Name).List(ctx, metav1.ListOptions{}); err != nil {
 			return nil, err
-		} else {
-			for _, v := range nsPods.Items {
-				pods.Items = append(pods.Items, v)
-			}
 		}
+
+		pods.Items = append(pods.Items, nsPods.Items...)
 	}
 
 	for _, pod := range pods.Items {
@@ -86,7 +91,7 @@ func getTerminatingPods(ctx context.Context, clientSet kubernetes.Interface, nam
 func getEvictedPods(ctx context.Context, clientSet kubernetes.Interface, namespace string) ([]v1.Pod, error) {
 	var (
 		evictedPods []v1.Pod
-		pods        = new(v1.PodList)
+		pods        *v1.PodList
 		namespaces  = new(v1.NamespaceList)
 		err         error
 	)
@@ -109,13 +114,12 @@ func getEvictedPods(ctx context.Context, clientSet kubernetes.Interface, namespa
 	}
 
 	for _, v := range namespaces.Items {
-		if nsPods, err := clientSet.CoreV1().Pods(v.Name).List(ctx, metav1.ListOptions{}); err != nil {
+		var nsPods *v1.PodList
+		if nsPods, err = clientSet.CoreV1().Pods(v.Name).List(ctx, metav1.ListOptions{}); err != nil {
 			return nil, err
-		} else {
-			for _, v := range nsPods.Items {
-				pods.Items = append(pods.Items, v)
-			}
 		}
+
+		pods.Items = append(pods.Items, nsPods.Items...)
 	}
 
 	for _, pod := range pods.Items {

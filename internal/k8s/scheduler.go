@@ -8,12 +8,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"kube-pod-terminator/internal/logging"
 	"kube-pod-terminator/internal/options"
+	"log"
 	"sync"
 )
 
 var (
-	logger        *zap.Logger
-	opts          *options.KubePodTerminatorOptions
+	logger *zap.Logger
+	opts   *options.KubePodTerminatorOptions
 )
 
 func init() {
@@ -29,6 +30,7 @@ func terminatePods(podChannel chan v1.Pod, wg *sync.WaitGroup, clientSet kuberne
 			metav1.DeleteOptions{GracePeriodSeconds: &opts.GracePeriodSeconds}); err != nil {
 			logger.Warn("an error occured while deleting pod", zap.String("name", pod.Name),
 				zap.String("error", err.Error()))
+			wg.Done()
 			continue
 		}
 
@@ -54,6 +56,7 @@ func Run(ctx context.Context, namespace string, clientSet kubernetes.Interface, 
 
 	go terminatePods(podChannel, &wg, clientSet, logger)
 	terminatingPods, err := getTerminatingPods(ctx, clientSet, namespace)
+	log.Println(len(terminatingPods))
 	if err != nil {
 		logger.Warn("an error occurred while getting terminating pods, skipping execution", zap.Error(err))
 		return

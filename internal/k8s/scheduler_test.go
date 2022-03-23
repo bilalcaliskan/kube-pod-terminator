@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	"kube-pod-terminator/internal/logging"
+	"log"
 	"sync"
 	"testing"
 	"time"
@@ -54,7 +55,28 @@ func (fAPI *FakeAPI) createEvictedPod(name string) (*v1.Pod, error) {
 	return pod, nil
 }
 
-func (fAPI *FakeAPI) createTerminatingPod(name string, deletionTimestamp *metav1.Time) (*v1.Pod, error) {
+func (fAPI *FakeAPI) createNamespace(name string) (*v1.Namespace, error) {
+	namespace := &v1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Namespace",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+
+	namespace, err := fAPI.ClientSet.CoreV1().Namespaces().Create(context.TODO(), namespace, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println(fAPI.ClientSet.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{}))
+
+	return namespace, nil
+}
+
+func (fAPI *FakeAPI) createTerminatingPod(name, namespace string, deletionTimestamp *metav1.Time) (*v1.Pod, error) {
 	pod := &v1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
@@ -63,7 +85,7 @@ func (fAPI *FakeAPI) createTerminatingPod(name string, deletionTimestamp *metav1
 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              name,
-			Namespace:         fAPI.Namespace,
+			Namespace:         namespace,
 			DeletionTimestamp: deletionTimestamp,
 		},
 		Spec: v1.PodSpec{
@@ -80,7 +102,7 @@ func (fAPI *FakeAPI) createTerminatingPod(name string, deletionTimestamp *metav1
 		},
 	}
 
-	pod, err := fAPI.ClientSet.CoreV1().Pods(fAPI.Namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
+	pod, err := fAPI.ClientSet.CoreV1().Pods(namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +119,12 @@ func getFakeAPI() *FakeAPI {
 func TestRunNoTargetTerminatingPods(t *testing.T) {
 	api := getFakeAPI()
 	assert.NotNil(t, api)
+	namespace := "default"
 
-	t.Log(opts.TerminatingStateMinutes)
+	nsDefault, errDefault := api.createNamespace("default")
+	assert.Nil(t, errDefault)
+	assert.NotNil(t, nsDefault)
+
 	cases := []struct {
 		caseName, podName, namespace string
 		deletionTimestamp            *metav1.Time
@@ -106,13 +132,14 @@ func TestRunNoTargetTerminatingPods(t *testing.T) {
 		{
 			caseName:          "case1",
 			podName:           "varnish-pod-1",
+			namespace:         namespace,
 			deletionTimestamp: nil,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.caseName, func(t *testing.T) {
-			pod, err := api.createTerminatingPod(tc.podName, tc.deletionTimestamp)
+			pod, err := api.createTerminatingPod(tc.podName, tc.namespace, tc.deletionTimestamp)
 			assert.Nil(t, err)
 			assert.NotNil(t, pod)
 			time.Sleep(2 * time.Second)
@@ -121,7 +148,7 @@ func TestRunNoTargetTerminatingPods(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	Run(ctx, api.Namespace, api.ClientSet, "")
+	Run(ctx, namespace, api.ClientSet, "")
 }
 
 func TestRunDoNotTerminateEvictedPods(t *testing.T) {
@@ -129,8 +156,8 @@ func TestRunDoNotTerminateEvictedPods(t *testing.T) {
 	assert.NotNil(t, api)
 
 	opts.TerminateEvicted = false
-
-	pod, err := api.createTerminatingPod("varnish-pod-1", &metav1.Time{Time: time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)})
+	pod, err := api.createTerminatingPod("varnish-pod-1", "default",
+		&metav1.Time{Time: time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)})
 	assert.Nil(t, err)
 	assert.NotNil(t, pod)
 	time.Sleep(2 * time.Second)
@@ -184,10 +211,10 @@ func TestRunBrokenApiCall(t *testing.T) {
 	Run(context.Background(), "default", clientSet, "")
 }
 
-func TestRunTerminatingPods(t *testing.T) {
+func TestRunTerminatingPodsAllNamespaces(t *testing.T) {
 	api := getFakeAPI()
 	assert.NotNil(t, api)
-
+	opts.Namespace = "all"
 	cases := []struct {
 		caseName, podName, namespace string
 		deletionTimestamp            *metav1.Time
@@ -195,18 +222,20 @@ func TestRunTerminatingPods(t *testing.T) {
 		{
 			caseName:          "case1",
 			podName:           "varnish-pod-1",
-			deletionTimestamp: &metav1.Time{Time: time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)},
+			namespace:         "default",
+			deletionTimestamp: &metav1.Time{Time: time.Date(2019, time.Month(2), 21, 1, 10, 30, 0, time.UTC)},
 		},
 		{
 			caseName:          "case2",
 			podName:           "varnish-pod-2",
-			deletionTimestamp: &metav1.Time{Time: time.Date(2020, time.Month(2), 21, 1, 10, 30, 0, time.UTC)},
+			namespace:         "kube-system",
+			deletionTimestamp: &metav1.Time{Time: time.Date(2019, time.Month(2), 21, 1, 10, 30, 0, time.UTC)},
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.caseName, func(t *testing.T) {
-			pod, err := api.createTerminatingPod(tc.podName, tc.deletionTimestamp)
+			pod, err := api.createTerminatingPod(tc.podName, tc.namespace, tc.deletionTimestamp)
 			assert.Nil(t, err)
 			assert.NotNil(t, pod)
 			time.Sleep(2 * time.Second)
@@ -215,7 +244,43 @@ func TestRunTerminatingPods(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	Run(ctx, api.Namespace, api.ClientSet, "")
+	Run(ctx, opts.Namespace, api.ClientSet, "")
+}
+
+func TestRunTerminatingPodsSingleNamespace(t *testing.T) {
+	api := getFakeAPI()
+	assert.NotNil(t, api)
+	opts.Namespace = "default"
+	cases := []struct {
+		caseName, podName, namespace string
+		deletionTimestamp            *metav1.Time
+	}{
+		{
+			caseName:          "case1",
+			podName:           "varnish-pod-1",
+			namespace:         "default",
+			deletionTimestamp: &metav1.Time{Time: time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)},
+		},
+		{
+			caseName:          "case2",
+			podName:           "varnish-pod-2",
+			namespace:         "kube-system",
+			deletionTimestamp: &metav1.Time{Time: time.Date(2020, time.Month(2), 21, 1, 10, 30, 0, time.UTC)},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.caseName, func(t *testing.T) {
+			pod, err := api.createTerminatingPod(tc.podName, tc.namespace, tc.deletionTimestamp)
+			assert.Nil(t, err)
+			assert.NotNil(t, pod)
+			time.Sleep(2 * time.Second)
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	Run(ctx, opts.Namespace, api.ClientSet, "")
 }
 
 func TestGetClientSet(t *testing.T) {
