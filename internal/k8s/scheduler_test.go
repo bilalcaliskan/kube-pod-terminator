@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	"kube-pod-terminator/internal/logging"
 	"sync"
 	"testing"
 	"time"
@@ -17,7 +18,7 @@ type FakeAPI struct {
 	Namespace string
 }
 
-func (fAPI *FakeAPI) createEvictedPod(name string) (*v1.Pod, error) {
+func (fAPI *FakeAPI) createEvictedPod(name, namespace string) (*v1.Pod, error) {
 	pod := &v1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
@@ -25,7 +26,7 @@ func (fAPI *FakeAPI) createEvictedPod(name string) (*v1.Pod, error) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              name,
-			Namespace:         fAPI.Namespace,
+			Namespace:         namespace,
 			DeletionTimestamp: nil,
 		},
 		Spec: v1.PodSpec{
@@ -45,7 +46,7 @@ func (fAPI *FakeAPI) createEvictedPod(name string) (*v1.Pod, error) {
 		},
 	}
 
-	pod, err := fAPI.ClientSet.CoreV1().Pods(fAPI.Namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
+	pod, err := fAPI.ClientSet.CoreV1().Pods(namespace).Create(context.Background(), pod, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -53,15 +54,35 @@ func (fAPI *FakeAPI) createEvictedPod(name string) (*v1.Pod, error) {
 	return pod, nil
 }
 
-func (fAPI *FakeAPI) createTerminatingPod(name string, deletionTimestamp *metav1.Time) (*v1.Pod, error) {
+func (fAPI *FakeAPI) createNamespace(name string) (*v1.Namespace, error) {
+	namespace := &v1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Namespace",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+
+	namespace, err := fAPI.ClientSet.CoreV1().Namespaces().Create(context.Background(), namespace, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return namespace, nil
+}
+
+func (fAPI *FakeAPI) createTerminatingPod(name, namespace string, deletionTimestamp *metav1.Time) (*v1.Pod, error) {
 	pod := &v1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
 			APIVersion: "v1",
 		},
+
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              name,
-			Namespace:         fAPI.Namespace,
+			Namespace:         namespace,
 			DeletionTimestamp: deletionTimestamp,
 		},
 		Spec: v1.PodSpec{
@@ -78,7 +99,7 @@ func (fAPI *FakeAPI) createTerminatingPod(name string, deletionTimestamp *metav1
 		},
 	}
 
-	pod, err := fAPI.ClientSet.CoreV1().Pods(fAPI.Namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
+	pod, err := fAPI.ClientSet.CoreV1().Pods(namespace).Create(context.Background(), pod, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +116,10 @@ func getFakeAPI() *FakeAPI {
 func TestRunNoTargetTerminatingPods(t *testing.T) {
 	api := getFakeAPI()
 	assert.NotNil(t, api)
+	namespace := "default"
 
-	t.Log(opts.TerminatingStateMinutes)
+	_, _ = api.createNamespace("default")
+
 	cases := []struct {
 		caseName, podName, namespace string
 		deletionTimestamp            *metav1.Time
@@ -104,70 +127,146 @@ func TestRunNoTargetTerminatingPods(t *testing.T) {
 		{
 			caseName:          "case1",
 			podName:           "varnish-pod-1",
+			namespace:         namespace,
 			deletionTimestamp: nil,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.caseName, func(t *testing.T) {
-			pod, err := api.createTerminatingPod(tc.podName, tc.deletionTimestamp)
+			pod, err := api.createTerminatingPod(tc.podName, tc.namespace, tc.deletionTimestamp)
 			assert.Nil(t, err)
 			assert.NotNil(t, pod)
 			time.Sleep(2 * time.Second)
 		})
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	Run(ctx, api.Namespace, api.ClientSet, "")
+	Run(namespace, api.ClientSet, "")
 }
 
 func TestRunDoNotTerminateEvictedPods(t *testing.T) {
 	api := getFakeAPI()
 	assert.NotNil(t, api)
 
+	_, _ = api.createNamespace("default")
 	opts.TerminateEvicted = false
-
-	pod, err := api.createTerminatingPod("varnish-pod-1", &metav1.Time{Time: time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)})
+	pod, err := api.createTerminatingPod("varnish-pod-1", "default",
+		&metav1.Time{Time: time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)})
+	pod2, err2 := api.createEvictedPod("varnish-pod-2", "default")
 	assert.Nil(t, err)
 	assert.NotNil(t, pod)
+	assert.Nil(t, err2)
+	assert.NotNil(t, pod2)
 	time.Sleep(2 * time.Second)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	Run(ctx, api.Namespace, api.ClientSet, "")
+	Run(api.Namespace, api.ClientSet, "")
 }
 
-func TestRunEvictedPods(t *testing.T) {
+func TestRunEvictedPodsAllNamespaces(t *testing.T) {
 	api := getFakeAPI()
 	assert.NotNil(t, api)
+
+	opts.Namespace = "all"
+	_, _ = api.createNamespace("default")
+	_, _ = api.createNamespace("kube-system")
 
 	cases := []struct {
 		caseName, podName, namespace string
 		deletionTimestamp            *metav1.Time
 	}{
 		{
-			caseName: "case1",
-			podName:  "varnish-pod-1",
+			caseName:  "case1",
+			podName:   "varnish-pod-1",
+			namespace: "default",
 		},
 		{
-			caseName: "case2",
-			podName:  "varnish-pod-2",
+			caseName:  "case2",
+			podName:   "varnish-pod-2",
+			namespace: "kube-system",
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.caseName, func(t *testing.T) {
-			pod, err := api.createEvictedPod(tc.podName)
+			pod, err := api.createEvictedPod(tc.podName, tc.namespace)
 			assert.Nil(t, err)
 			assert.NotNil(t, pod)
 			time.Sleep(2 * time.Second)
 		})
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	Run(ctx, api.Namespace, api.ClientSet, "")
+	Run(opts.Namespace, api.ClientSet, "")
+}
+
+func TestRunEvictedPodsAllNamespacesOneShot(t *testing.T) {
+	api := getFakeAPI()
+	assert.NotNil(t, api)
+
+	opts.OneShot = true
+	opts.Namespace = "all"
+	_, _ = api.createNamespace("default")
+	_, _ = api.createNamespace("kube-system")
+
+	cases := []struct {
+		caseName, podName, namespace string
+		deletionTimestamp            *metav1.Time
+	}{
+		{
+			caseName:  "case1",
+			podName:   "varnish-pod-1",
+			namespace: "default",
+		},
+		{
+			caseName:  "case2",
+			podName:   "varnish-pod-2",
+			namespace: "kube-system",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.caseName, func(t *testing.T) {
+			pod, err := api.createEvictedPod(tc.podName, tc.namespace)
+			assert.Nil(t, err)
+			assert.NotNil(t, pod)
+			time.Sleep(2 * time.Second)
+		})
+	}
+
+	Run(opts.Namespace, api.ClientSet, "")
+}
+
+func TestRunEvictedPodsSingleNamespace(t *testing.T) {
+	api := getFakeAPI()
+	assert.NotNil(t, api)
+
+	_, _ = api.createNamespace("default")
+
+	cases := []struct {
+		caseName, podName, namespace string
+		deletionTimestamp            *metav1.Time
+	}{
+		{
+			caseName:  "case1",
+			podName:   "varnish-pod-1",
+			namespace: "default",
+		},
+		{
+			caseName:  "case2",
+			podName:   "varnish-pod-2",
+			namespace: "default",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.caseName, func(t *testing.T) {
+			pod, err := api.createEvictedPod(tc.podName, tc.namespace)
+			assert.Nil(t, err)
+			assert.NotNil(t, pod)
+			time.Sleep(2 * time.Second)
+		})
+	}
+
+	Run(api.Namespace, api.ClientSet, "")
 }
 
 func TestRunBrokenApiCall(t *testing.T) {
@@ -179,12 +278,16 @@ func TestRunBrokenApiCall(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, clientSet)
 
-	Run(context.Background(), "default", clientSet, "")
+	Run("default", clientSet, "")
 }
 
-func TestRunTerminatingPods(t *testing.T) {
+func TestRunTerminatingPodsAllNamespaces(t *testing.T) {
 	api := getFakeAPI()
 	assert.NotNil(t, api)
+	opts.Namespace = "all"
+
+	_, _ = api.createNamespace("default")
+	_, _ = api.createNamespace("kube-system")
 
 	cases := []struct {
 		caseName, podName, namespace string
@@ -193,27 +296,59 @@ func TestRunTerminatingPods(t *testing.T) {
 		{
 			caseName:          "case1",
 			podName:           "varnish-pod-1",
-			deletionTimestamp: &metav1.Time{Time: time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)},
+			namespace:         "default",
+			deletionTimestamp: &metav1.Time{Time: time.Date(2019, time.Month(2), 21, 1, 10, 30, 0, time.UTC)},
 		},
 		{
 			caseName:          "case2",
 			podName:           "varnish-pod-2",
-			deletionTimestamp: &metav1.Time{Time: time.Date(2020, time.Month(2), 21, 1, 10, 30, 0, time.UTC)},
+			namespace:         "kube-system",
+			deletionTimestamp: &metav1.Time{Time: time.Date(2019, time.Month(2), 21, 1, 10, 30, 0, time.UTC)},
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.caseName, func(t *testing.T) {
-			pod, err := api.createTerminatingPod(tc.podName, tc.deletionTimestamp)
+			pod, err := api.createTerminatingPod(tc.podName, tc.namespace, tc.deletionTimestamp)
 			assert.Nil(t, err)
 			assert.NotNil(t, pod)
 			time.Sleep(2 * time.Second)
 		})
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	Run(ctx, api.Namespace, api.ClientSet, "")
+	Run(opts.Namespace, api.ClientSet, "")
+}
+
+func TestRunTerminatingPodsSingleNamespace(t *testing.T) {
+	api := getFakeAPI()
+	assert.NotNil(t, api)
+	opts.Namespace = "default"
+
+	_, _ = api.createNamespace("default")
+	_, _ = api.createNamespace("kube-system")
+
+	cases := []struct {
+		caseName, podName, namespace string
+		deletionTimestamp            *metav1.Time
+	}{
+		{
+			caseName:          "case1",
+			podName:           "varnish-pod-1",
+			namespace:         "default",
+			deletionTimestamp: &metav1.Time{Time: time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.caseName, func(t *testing.T) {
+			pod, err := api.createTerminatingPod(tc.podName, tc.namespace, tc.deletionTimestamp)
+			assert.Nil(t, err)
+			assert.NotNil(t, pod)
+			time.Sleep(2 * time.Second)
+		})
+	}
+
+	Run(opts.Namespace, api.ClientSet, "")
 }
 
 func TestGetClientSet(t *testing.T) {
@@ -237,6 +372,6 @@ func TestTerminatePods(t *testing.T) {
 	wg.Add(1)
 	podChannel := make(chan v1.Pod, opts.ChannelCapacity)
 	podChannel <- v1.Pod{}
-	go terminatePods(podChannel, &wg, api.ClientSet, "")
+	go terminatePods(podChannel, &wg, api.ClientSet, logging.GetLogger())
 	wg.Wait()
 }

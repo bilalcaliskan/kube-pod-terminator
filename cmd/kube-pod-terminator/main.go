@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"github.com/dimiro1/banner"
 	"go.uber.org/zap"
 	"io/ioutil"
@@ -10,6 +9,7 @@ import (
 	"kube-pod-terminator/internal/options"
 	"os"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -29,14 +29,8 @@ func init() {
 }
 
 func main() {
-	defer func() {
-		err := logger.Sync()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	kubeConfigPathArr = strings.Split(kpto.KubeConfigPaths, ",")
+	exitSignal := make(chan os.Signal)
 	for _, path := range kubeConfigPathArr {
 		go func(p string) {
 			logger = logger.With(zap.String("kubeConfigPath", p))
@@ -50,14 +44,29 @@ func main() {
 			if err != nil {
 				logger.Fatal("fatal error occurred while getting clientset", zap.String("error", err.Error()))
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(kpto.ContextTimeoutSeconds)*time.Second)
-			defer cancel()
-			k8s.Run(ctx, kpto.Namespace, clientSet, restConfig.Host)
+
+			k8s.Run(kpto.Namespace, clientSet, restConfig.Host)
+			if kpto.OneShot {
+				exitSignal <- syscall.SIGTERM
+				return
+			}
+
 			ticker := time.NewTicker(time.Duration(kpto.TickerIntervalMinutes) * time.Minute)
 			for range ticker.C {
-				k8s.Run(ctx, kpto.Namespace, clientSet, restConfig.Host)
+				k8s.Run(kpto.Namespace, clientSet, restConfig.Host)
 			}
 		}(path)
+	}
+
+	if kpto.OneShot {
+		signalCounter := 0
+		for range exitSignal {
+			signalCounter++
+			if signalCounter == len(kubeConfigPathArr) {
+				logger.Info("all goroutines sent a SIGTERM, exiting")
+				os.Exit(0)
+			}
+		}
 	}
 
 	select {}

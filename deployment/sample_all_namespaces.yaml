@@ -3,16 +3,15 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: kube-pod-terminator-sa
+  name: kube-pod-terminator
   namespace: default
 
 ---
 
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  name: kube-pod-terminator-role
-  namespace: default
+  name: kube-pod-terminator
 rules:
   - apiGroups:
       - ""
@@ -26,17 +25,17 @@ rules:
 ---
 
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
-  name: kube-pod-terminator-rolebinding
+  name: kube-pod-terminator
   namespace: default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: kube-pod-terminator-role
+  kind: ClusterRole
+  name: kube-pod-terminator
 subjects:
   - kind: ServiceAccount
-    name: kube-pod-terminator-sa
+    name: kube-pod-terminator
     namespace: default
 
 ---
@@ -47,6 +46,7 @@ metadata:
   labels:
     app: kube-pod-terminator
   name: kube-pod-terminator
+  namespace: default
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -60,14 +60,15 @@ spec:
         app: kube-pod-terminator
         deployment: kube-pod-terminator
     spec:
-      serviceAccountName: kube-pod-terminator-sa
+      serviceAccountName: kube-pod-terminator
       containers:
         - image: 'docker.io/bilalcaliskan/kube-pod-terminator:latest'
           command: ["./main"]
           args: [
-              "--namespace", "default",
+              "--namespace", "all",
               "--tickerIntervalMin", "10",
-              "--inCluster=true"
+              "--inCluster=true",
+              "--oneShot=false"
           ]
           imagePullPolicy: Always
           name: kube-pod-terminator
