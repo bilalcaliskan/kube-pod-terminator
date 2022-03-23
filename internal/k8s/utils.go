@@ -42,7 +42,7 @@ func GetClientSet(config *rest.Config) (*kubernetes.Clientset, error) {
 	return clientSet, nil
 }
 
-func getTerminatingPods(ctx context.Context, clientSet kubernetes.Interface, namespace string) ([]v1.Pod, error) {
+func getTerminatingPods(clientSet kubernetes.Interface, namespace string) ([]v1.Pod, error) {
 	var (
 		resultSlice []v1.Pod
 		pods        = new(v1.PodList)
@@ -50,17 +50,14 @@ func getTerminatingPods(ctx context.Context, clientSet kubernetes.Interface, nam
 		err         error
 	)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
 	if strings.ToLower(namespace) == "all" {
 		if namespaces, err = clientSet.CoreV1().Namespaces().List(ctx, metav1.ListOptions{}); err != nil {
 			return nil, err
 		}
 	} else {
-		/*nsFieldSelector := fields.ParseSelectorOrDie(fmt.Sprintf("metadata.name=%s", namespace))
-		if namespaces, err = clientSet.CoreV1().Namespaces().List(ctx, metav1.ListOptions{
-			FieldSelector: nsFieldSelector.String(),
-		}); err != nil {
-			return nil, err
-		}*/
 		var ns *v1.Namespace
 		if ns, err = clientSet.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{}); err != nil {
 			return nil, err
@@ -88,17 +85,16 @@ func getTerminatingPods(ctx context.Context, clientSet kubernetes.Interface, nam
 	return resultSlice, nil
 }
 
-func getEvictedPods(ctx context.Context, clientSet kubernetes.Interface, namespace string) ([]v1.Pod, error) {
+func getEvictedPods(clientSet kubernetes.Interface, namespace string) ([]v1.Pod, error) {
 	var (
 		evictedPods []v1.Pod
-		pods        *v1.PodList
+		pods        = new(v1.PodList)
 		namespaces  = new(v1.NamespaceList)
 		err         error
 	)
 
-	if pods, err = clientSet.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{}); err != nil {
-		return nil, err
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
 
 	if strings.ToLower(namespace) == "all" {
 		if namespaces, err = clientSet.CoreV1().Namespaces().List(ctx, metav1.ListOptions{}); err != nil {

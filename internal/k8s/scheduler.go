@@ -8,19 +8,15 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"kube-pod-terminator/internal/logging"
 	"kube-pod-terminator/internal/options"
-	"log"
 	"sync"
 )
 
 var (
-	logger *zap.Logger
-	opts   *options.KubePodTerminatorOptions
+	opts *options.KubePodTerminatorOptions
 )
 
 func init() {
 	opts = options.GetKubePodTerminatorOptions()
-	logger = logging.GetLogger()
-	logger = logger.With(zap.Bool("inCluster", opts.InCluster))
 }
 
 // terminatePods does the real job, terminates the items in the v1.Pod channel with specified clientSet
@@ -34,29 +30,29 @@ func terminatePods(podChannel chan v1.Pod, wg *sync.WaitGroup, clientSet kuberne
 			continue
 		}
 
-		logger.Info("pod successfully terminated", zap.String("name", pod.Name))
+		logger.Info("pod successfully terminated", zap.String("name", pod.Name), zap.String("namespace", pod.Namespace))
 		wg.Done()
 	}
 }
 
 // addPodsToChannel adds items of v1.Pod slice to specified v1.Pod channel
-func addPodsToChannel(podChannel chan v1.Pod, wg *sync.WaitGroup, podSlice []v1.Pod, state string) {
+func addPodsToChannel(podChannel chan v1.Pod, wg *sync.WaitGroup, podSlice []v1.Pod, state string, logger *zap.Logger) {
 	for _, pod := range podSlice {
-		logger.Info("adding pod to podChannel channel", zap.String("state", state))
+		logger.Info("adding pod to podChannel channel", zap.String("name", pod.Name),
+			zap.String("namespace", pod.Namespace), zap.String("state", state))
 		podChannel <- pod
 		wg.Add(1)
 	}
 }
 
 // Run operates the business logic, fetches the terminating and evicted pods and terminates them
-func Run(ctx context.Context, namespace string, clientSet kubernetes.Interface, apiServer string) {
-	logger = logger.With(zap.String("apiServer", apiServer))
+func Run(namespace string, clientSet kubernetes.Interface, apiServer string) {
+	logger := logging.GetLogger().With(zap.String("apiServer", apiServer))
 	podChannel := make(chan v1.Pod, opts.ChannelCapacity)
 	var wg sync.WaitGroup
 
 	go terminatePods(podChannel, &wg, clientSet, logger)
-	terminatingPods, err := getTerminatingPods(ctx, clientSet, namespace)
-	log.Println(len(terminatingPods))
+	terminatingPods, err := getTerminatingPods(clientSet, namespace)
 	if err != nil {
 		logger.Warn("an error occurred while getting terminating pods, skipping execution", zap.Error(err))
 		return
@@ -64,13 +60,13 @@ func Run(ctx context.Context, namespace string, clientSet kubernetes.Interface, 
 
 	if len(terminatingPods) > 0 {
 		logger.Info("found pods", zap.String("state", "terminating"), zap.Int("podCount", len(terminatingPods)))
-		addPodsToChannel(podChannel, &wg, terminatingPods, "terminating")
+		addPodsToChannel(podChannel, &wg, terminatingPods, "terminating", logger)
 	} else {
 		logger.Info("no pod found, skipping execution", zap.String("state", "terminating"))
 	}
 
 	if opts.TerminateEvicted {
-		evictedPods, err := getEvictedPods(ctx, clientSet, namespace)
+		evictedPods, err := getEvictedPods(clientSet, namespace)
 		if err != nil {
 			logger.Warn("an error occurred while getting evicted pods, skipping execution", zap.Error(err))
 			return
@@ -78,7 +74,7 @@ func Run(ctx context.Context, namespace string, clientSet kubernetes.Interface, 
 
 		if len(evictedPods) > 0 {
 			logger.Info("found pods", zap.String("state", "evicted"), zap.Int("podCount", len(evictedPods)))
-			addPodsToChannel(podChannel, &wg, evictedPods, "evicted")
+			addPodsToChannel(podChannel, &wg, evictedPods, "evicted", logger)
 		} else {
 			logger.Info("no pod found, skipping execution", zap.String("state", "evicted"))
 		}

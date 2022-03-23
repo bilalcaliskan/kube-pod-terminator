@@ -15,7 +15,7 @@ On some Kubernetes versions, there is a problem that pods stuck in **Terminating
 connects to the **kube-apiserver**, discovers Terminating pods which are in **Terminating** status more than **--terminatingStateMinutes**
 minutes, which is defaults to 30 minutes.
 
-This tool also discovers pods which are at **Evicted** state if **--terminateEvicted** passed(enabled by default) and 
+This tool also discovers pods which are at **Evicted** state if **--terminateEvicted** passed(enabled by default) and
 clears them all on **--tickerIntervalMin** which defaults to 5 minutes.
 
 Please note that **kube-pod-terminator** can work in Kubernetes cluster as Deployment, or outside of Kubernetes cluster as binary.
@@ -28,13 +28,14 @@ via [sample deployment file](deployment/sample_single_namespace.yaml) or directl
 ```
 --inCluster                 bool        Specify if kube-pod-terminator is running in cluster. Defaults to true
 --kubeConfigPaths           string      Comma seperated list of kubeconfig files path to access clusters. Required while running out of Kubernetes cluster.
---namespace                 string      Namespace to run on. Defaults to "default" namespace. Supports "all" option for all namespaces.
+--namespace                 string      Namespace to run on. Defaults to all namespaces. Can be given a specific namespace only.
+--terminateEvicted          bool        Terminate evicted pods in specified namespaces. Defaults to true.
+--oneShot                   bool        OneShot is the specifier to run kube-pod-terminator only one time instead of
+                                        continuously running in the background periodically
+--gracePeriodSeconds        int64       Grace period to delete pods. Defaults to 30.
 --tickerIntervalMin         int32       Kube-pod-terminator runs as scheduled job. This argument is the interval of scheduled job to run. Defaults to 5.
 --terminatingStateMinutes   int32       Terminate stucked pods in terminating state which are more than that value. Defaults to 30.
 --channelCapacity           int         Channel capacity for concurrency. Defaults to 10.
---gracePeriodSeconds        int64       Grace period to delete pods. Defaults to 30.
---terminateEvicted          bool        Terminate evicted pods in specified namespaces. Defaults to true.
---contextTimeoutSeconds     int32       When to timeout request context while talking to apiserver. Defaults to 1.
 ```
 
 ## Installation
@@ -50,8 +51,8 @@ $ kubectl create -f deployment/sample_single_namespace.yaml
 
 ### All namespaces support
 By default, kube-pod-terminator runs to terminate pods in `default` namespace. But that behavior can be changed with
-`namespace` flag. You can see the example Kubernetes manifest file [deployment/sample_all_namespaces.yaml](deployment/sample_all_namespaces.yaml). 
-Keep in mind that this file creates necessary `ClusterRole` and `ClusterRoleBinding` to be able to take proper actions on all 
+`namespace` flag. You can see the example Kubernetes manifest file [deployment/sample_all_namespaces.yaml](deployment/sample_all_namespaces.yaml).
+Keep in mind that this file creates necessary `ClusterRole` and `ClusterRoleBinding` to be able to take proper actions on all
 namespaces.
 ```
 --namespace=all
@@ -85,7 +86,7 @@ use that method to run kube-pod-terminator outside of a Kubernetes cluster.
 
 After then, you can simply run binary by providing required command line arguments:
 ```shell
-$ ./kube-pod-terminator --inCluster false --kubeConfigPath ~/.kube/config
+$ ./kube-pod-terminator --inCluster false --kubeConfigPaths ~/.kube/config
 ```
 
 > Critical command line arguments while running kube-pod-terminator as standalone application are **--inCluster**, **--kubeConfigPaths**

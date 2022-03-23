@@ -69,7 +69,8 @@ spec:
               "--namespace", "default",
               "--tickerIntervalMin", "10",
               "--inCluster=true",
-              "--kubeConfigPaths", "/opt/cluster1-config.yaml,/opt/cluster2-config.yaml,/opt/cluster3-config.yaml"
+              "--kubeConfigPaths", "/opt/cluster1-config.yaml,/opt/cluster2-config.yaml,/opt/cluster3-config.yaml",
+              "--oneShot=false"
           ]
           imagePullPolicy: Always
           name: kube-pod-terminator
