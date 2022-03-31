@@ -18,7 +18,7 @@ builds:
       - amd64
     ldflags:
       - -s -w
-    main: ./main.go
+    main: ./cmd/kube-pod-terminator/main.go
 brews:
   - name: kube-pod-terminator
     tap:
