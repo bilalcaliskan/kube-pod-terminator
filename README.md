@@ -80,6 +80,13 @@ $ kubectl create configmap cluster2-config --from-file=${YOUR_CLUSTER2_CONFIG_PA
 $ kubectl create configmap cluster3-config --from-file=${YOUR_CLUSTER3_CONFIG_PATH}
 ```
 
+### Homebrew
+This project can be installed with [Homebrew](https://brew.sh/):
+```
+brew tap bilalcaliskan/tap
+brew install bilalcaliskan/tap/kube-pod-terminator
+```
+
 ### Binary
 Binary can be downloaded from [Releases](https://github.com/bilalcaliskan/kube-pod-terminator/releases) page. You can
 use that method to run kube-pod-terminator outside of a Kubernetes cluster.
