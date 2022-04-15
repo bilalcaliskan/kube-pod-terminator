@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/dimiro1/banner"
+	_ "go.uber.org/automaxprocs"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"kube-pod-terminator/internal/k8s"
