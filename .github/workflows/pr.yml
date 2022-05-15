@@ -18,6 +18,7 @@ jobs:
         with:
           # version: latest
           version: v1.46.1
+          args: --timeout=2m0s
 
   vet:
     runs-on: ubuntu-latest
