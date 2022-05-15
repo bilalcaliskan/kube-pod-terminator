@@ -1,0 +1,6 @@
+FROM gcr.io/distroless/static:nonroot-amd64
+
+ADD kube-pod-terminator /usr/local/bin/kube-pod-terminator
+
+USER nonroot
+ENTRYPOINT ["kube-pod-terminator"]
