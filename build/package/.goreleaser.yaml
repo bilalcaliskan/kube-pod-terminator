@@ -28,7 +28,7 @@ builds:
     binary: kube-pod-terminator
     ldflags:
       - -s -w -X github.com/bilalcaliskan/kube-pod-terminator/cmd.GitVersion={{ .Version }} -X github.com/bilalcaliskan/kube-pod-terminator/cmd.gitCommit={{ .ShortCommit }}  -X github.com/bilalcaliskan/kube-pod-terminator/cmd.buildDate={{ .CommitDate }}
-    main: ./cmd/kube-pod-terminator/main.go
+    main: ./main.go
 
 dockers:
   - image_templates:

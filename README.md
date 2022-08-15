@@ -26,16 +26,18 @@ Kube-pod-terminator can be customized with several command line arguments. You c
 via [sample deployment file](deployment/sample_single_namespace.yaml) or directly to the binary. Here is the list of arguments you can pass:
 
 ```
---inCluster                 bool        Specify if kube-pod-terminator is running in cluster. Defaults to true
---kubeConfigPaths           string      Comma seperated list of kubeconfig files path to access clusters. Required while running out of Kubernetes cluster.
---namespace                 string      Namespace to run on. Defaults to all namespaces. Can be given a specific namespace only.
---terminateEvicted          bool        Terminate evicted pods in specified namespaces. Defaults to true.
---oneShot                   bool        OneShot is the specifier to run kube-pod-terminator only one time instead of
-                                        continuously running in the background periodically
---gracePeriodSeconds        int64       Grace period to delete pods. Defaults to 30.
---tickerIntervalMin         int32       Kube-pod-terminator runs as scheduled job. This argument is the interval of scheduled job to run. Defaults to 5.
---terminatingStateMinutes   int32       Terminate stucked pods in terminating state which are more than that value. Defaults to 30.
---channelCapacity           int         Channel capacity for concurrency. Defaults to 10.
+Flags:
+      --channelCapacity int             channel capacity for concurrency (default 10)
+      --gracePeriodSeconds int          grace period to delete target pods (default 30)
+  -h, --help                            help for kube-pod-terminator
+      --inCluster                       specify if kube-pod-terminator is running in cluster
+      --kubeConfigPaths string          comma separated list of kubeconfig file paths to access with the cluster (default "/home/joshsagredo/.kube/config")
+      --namespace string                target namespace to run on (default "all")
+      --oneShot                         specifier to run kube-pod-terminator only one time instead of continuously running in the background. should be true if you are using app as CLI. (default true)
+      --terminateEvicted                terminate evicted pods in specified namespaces (default true)
+      --terminatingStateMinutes int32   terminate stucked pods in terminating state which are more than that value (default 30)
+      --tickerIntervalMinutes int32     interval of scheduled job to run (default 5)
+  -v, --verbose                         verbose output of the logging library (default false)
 ```
 
 ## Installation

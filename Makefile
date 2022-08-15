@@ -15,11 +15,14 @@ ineffassign:
 test:
 	go test ./...
 
+test_coverage:
+	go test ./... -race -coverprofile=coverage.txt -covermode=atomic
+
 build:
-	go build -o bin/main cmd/kube-pod-terminator/main.go
+	go build -o bin/main main.go
 
 run:
-	go run cmd/kube-pod-terminator/main.go
+	go run main.go
 
 cross-compile:
 	GOOS=freebsd GOARCH=386 go build -o bin/main-freebsd-386 cmd/kube-pod-terminator/main.go
