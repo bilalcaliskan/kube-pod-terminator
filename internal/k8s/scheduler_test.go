@@ -2,20 +2,41 @@ package k8s
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/bilalcaliskan/kube-pod-terminator/internal/logging"
+	"github.com/bilalcaliskan/kube-pod-terminator/internal/options"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
-	"kube-pod-terminator/internal/logging"
-	"sync"
-	"testing"
-	"time"
 )
 
 type FakeAPI struct {
 	ClientSet kubernetes.Interface
 	Namespace string
+}
+
+func getDefaultOpts() *options.KubePodTerminatorOptions {
+	return &options.KubePodTerminatorOptions{
+		InCluster:               true,
+		KubeConfigPaths:         filepath.Join(os.Getenv("HOME"), ".kube", "config"),
+		Namespace:               "all",
+		TickerIntervalMinutes:   5,
+		ChannelCapacity:         10,
+		GracePeriodSeconds:      30,
+		TerminateEvicted:        true,
+		TerminatingStateMinutes: 30,
+		OneShot:                 false,
+		BannerFilePath:          "",
+		VerboseLog:              false,
+	}
 }
 
 func (fAPI *FakeAPI) createEvictedPod(name, namespace string) (*v1.Pod, error) {
@@ -116,9 +137,11 @@ func getFakeAPI() *FakeAPI {
 func TestRunNoTargetTerminatingPods(t *testing.T) {
 	api := getFakeAPI()
 	assert.NotNil(t, api)
-	namespace := "default"
 
-	_, _ = api.createNamespace("default")
+	testOpts := getDefaultOpts()
+
+	namespace := "default"
+	_, _ = api.createNamespace(namespace)
 
 	cases := []struct {
 		caseName, podName, namespace string
@@ -141,7 +164,7 @@ func TestRunNoTargetTerminatingPods(t *testing.T) {
 		})
 	}
 
-	Run(namespace, api.ClientSet, "")
+	Run(testOpts, api.ClientSet, "")
 }
 
 func TestRunDoNotTerminateEvictedPods(t *testing.T) {
@@ -149,7 +172,10 @@ func TestRunDoNotTerminateEvictedPods(t *testing.T) {
 	assert.NotNil(t, api)
 
 	_, _ = api.createNamespace("default")
-	opts.TerminateEvicted = false
+
+	testOpts := getDefaultOpts()
+	testOpts.TerminateEvicted = false
+	testOpts.Namespace = "default"
 	pod, err := api.createTerminatingPod("varnish-pod-1", "default",
 		&metav1.Time{Time: time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)})
 	pod2, err2 := api.createEvictedPod("varnish-pod-2", "default")
@@ -159,14 +185,15 @@ func TestRunDoNotTerminateEvictedPods(t *testing.T) {
 	assert.NotNil(t, pod2)
 	time.Sleep(2 * time.Second)
 
-	Run(api.Namespace, api.ClientSet, "")
+	Run(testOpts, api.ClientSet, "")
 }
 
 func TestRunEvictedPodsAllNamespaces(t *testing.T) {
 	api := getFakeAPI()
 	assert.NotNil(t, api)
 
-	opts.Namespace = "all"
+	testOpts := getDefaultOpts()
+	testOpts.Namespace = "all"
 	_, _ = api.createNamespace("default")
 	_, _ = api.createNamespace("kube-system")
 
@@ -195,15 +222,16 @@ func TestRunEvictedPodsAllNamespaces(t *testing.T) {
 		})
 	}
 
-	Run(opts.Namespace, api.ClientSet, "")
+	Run(testOpts, api.ClientSet, "")
 }
 
 func TestRunEvictedPodsAllNamespacesOneShot(t *testing.T) {
 	api := getFakeAPI()
 	assert.NotNil(t, api)
 
-	opts.OneShot = true
-	opts.Namespace = "all"
+	testOpts := getDefaultOpts()
+	testOpts.OneShot = true
+	testOpts.Namespace = "all"
 	_, _ = api.createNamespace("default")
 	_, _ = api.createNamespace("kube-system")
 
@@ -232,7 +260,7 @@ func TestRunEvictedPodsAllNamespacesOneShot(t *testing.T) {
 		})
 	}
 
-	Run(opts.Namespace, api.ClientSet, "")
+	Run(testOpts, api.ClientSet, "")
 }
 
 func TestRunEvictedPodsSingleNamespace(t *testing.T) {
@@ -240,6 +268,8 @@ func TestRunEvictedPodsSingleNamespace(t *testing.T) {
 	assert.NotNil(t, api)
 
 	_, _ = api.createNamespace("default")
+	testOpts := getDefaultOpts()
+	testOpts.Namespace = "default"
 
 	cases := []struct {
 		caseName, podName, namespace string
@@ -266,7 +296,7 @@ func TestRunEvictedPodsSingleNamespace(t *testing.T) {
 		})
 	}
 
-	Run(api.Namespace, api.ClientSet, "")
+	Run(testOpts, api.ClientSet, "")
 }
 
 func TestRunBrokenApiCall(t *testing.T) {
@@ -274,17 +304,22 @@ func TestRunBrokenApiCall(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, restConfig)
 
+	testOpts := getDefaultOpts()
+	testOpts.Namespace = "default"
+
 	clientSet, err := GetClientSet(restConfig)
 	assert.Nil(t, err)
 	assert.NotNil(t, clientSet)
 
-	Run("default", clientSet, "")
+	Run(testOpts, clientSet, "")
 }
 
 func TestRunTerminatingPodsAllNamespaces(t *testing.T) {
 	api := getFakeAPI()
 	assert.NotNil(t, api)
-	opts.Namespace = "all"
+
+	testOpts := getDefaultOpts()
+	testOpts.Namespace = "all"
 
 	_, _ = api.createNamespace("default")
 	_, _ = api.createNamespace("kube-system")
@@ -316,13 +351,15 @@ func TestRunTerminatingPodsAllNamespaces(t *testing.T) {
 		})
 	}
 
-	Run(opts.Namespace, api.ClientSet, "")
+	Run(testOpts, api.ClientSet, "")
 }
 
 func TestRunTerminatingPodsSingleNamespace(t *testing.T) {
 	api := getFakeAPI()
 	assert.NotNil(t, api)
-	opts.Namespace = "default"
+
+	testOpts := getDefaultOpts()
+	testOpts.Namespace = "default"
 
 	_, _ = api.createNamespace("default")
 	_, _ = api.createNamespace("kube-system")
@@ -348,7 +385,7 @@ func TestRunTerminatingPodsSingleNamespace(t *testing.T) {
 		})
 	}
 
-	Run(opts.Namespace, api.ClientSet, "")
+	Run(testOpts, api.ClientSet, "")
 }
 
 func TestGetClientSet(t *testing.T) {
@@ -365,13 +402,33 @@ func TestGetClientSet(t *testing.T) {
 	assert.Nil(t, restConfig)
 }
 
+func TestTerminatePodsWithoutCreating(t *testing.T) {
+	api := getFakeAPI()
+	assert.NotNil(t, api)
+	var wg sync.WaitGroup
+
+	testOpts := getDefaultOpts()
+
+	wg.Add(1)
+	podChannel := make(chan v1.Pod, testOpts.ChannelCapacity)
+	podChannel <- v1.Pod{}
+	/*pod, _ := api.createTerminatingPod("demo-pod", "default", nil)
+	podChannel <- *pod*/
+	go terminatePods(podChannel, &wg, api.ClientSet, logging.GetLogger(), testOpts.GracePeriodSeconds)
+	wg.Wait()
+}
+
 func TestTerminatePods(t *testing.T) {
 	api := getFakeAPI()
 	assert.NotNil(t, api)
 	var wg sync.WaitGroup
+
+	testOpts := getDefaultOpts()
+
 	wg.Add(1)
-	podChannel := make(chan v1.Pod, opts.ChannelCapacity)
-	podChannel <- v1.Pod{}
-	go terminatePods(podChannel, &wg, api.ClientSet, logging.GetLogger())
+	podChannel := make(chan v1.Pod, testOpts.ChannelCapacity)
+	pod, _ := api.createTerminatingPod("demo-pod", "default", nil)
+	podChannel <- *pod
+	go terminatePods(podChannel, &wg, api.ClientSet, logging.GetLogger(), testOpts.GracePeriodSeconds)
 	wg.Wait()
 }

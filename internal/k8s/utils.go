@@ -3,14 +3,15 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"strings"
-	"time"
 )
 
 // GetConfig gets parameters to generate rest.Config and returns it
@@ -42,7 +43,7 @@ func GetClientSet(config *rest.Config) (*kubernetes.Clientset, error) {
 	return clientSet, nil
 }
 
-func getTerminatingPods(clientSet kubernetes.Interface, namespace string) ([]v1.Pod, error) {
+func getTerminatingPods(clientSet kubernetes.Interface, namespace string, terminatingStateMinutes int32) ([]v1.Pod, error) {
 	var (
 		resultSlice []v1.Pod
 		pods        = new(v1.PodList)
@@ -77,7 +78,7 @@ func getTerminatingPods(clientSet kubernetes.Interface, namespace string) ([]v1.
 
 	for _, pod := range pods.Items {
 		deletionTimestamp := pod.ObjectMeta.DeletionTimestamp
-		if deletionTimestamp != nil && deletionTimestamp.Add(time.Duration(opts.TerminatingStateMinutes)*time.Minute).Before(time.Now()) {
+		if deletionTimestamp != nil && deletionTimestamp.Add(time.Duration(terminatingStateMinutes)*time.Minute).Before(time.Now()) {
 			resultSlice = append(resultSlice, pod)
 		}
 	}

@@ -1,0 +1,7 @@
+FROM gcr.io/distroless/static:nonroot-amd64
+
+ADD kube-pod-terminator /usr/local/bin/kube-pod-terminator
+ADD build/ci/banner.txt /usr/local/banner.txt
+
+USER nonroot
+ENTRYPOINT ["kube-pod-terminator", "--bannerFilePath", "/usr/local/banner.txt"]
