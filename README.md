@@ -16,10 +16,22 @@ connects to the **kube-apiserver**, discovers Terminating pods which are in **Te
 minutes, which is defaults to 30 minutes.
 
 This tool also discovers pods which are at **Evicted** state if **--terminateEvicted** passed(enabled by default) and
-clears them all on **--tickerIntervalMin** which defaults to 5 minutes.
+clears them all.
 
-Please note that **kube-pod-terminator** can work in Kubernetes cluster as Deployment, or outside of Kubernetes cluster as binary.
+Please note that **kube-pod-terminator** can work in below modes:
+- Outside of Kubernetes cluster as a CLI (**--oneShot** should be passed, default behavior)
+- Inside Kubernetes cluster as Deployment (**--inCluster=true** should be passed)
+- Outside of Kubernetes cluster as binary (**--inCluster=false --oneShot=false** should be passed)
+
 Please refer to [Installation section](#installation) for more information.
+
+## Notable Features
+- All namespaces support
+- Multi clusters support
+- Ability to run in Kubernetes as Deployment
+- Ability to run outside of Kubernetes as binary (Linux, Darwin)
+- Ability to run outside of Kubernetes as CLI (oneshot app, not scheduled)
+- Homebrew
 
 ## Configuration
 Kube-pod-terminator can be customized with several command line arguments. You can pass arguments
@@ -114,15 +126,3 @@ $ pre-commit install
 
 ## License
 Apache License 2.0
-
-## How kube-pod-terminator handles authentication/authorization with kube-apiserver?
-
-kube-pod-terminator uses [client-go](https://github.com/kubernetes/client-go) to interact
-with `kube-apiserver`. [client-go](https://github.com/kubernetes/client-go) uses the [service account token](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/)
-mounted inside the Pod at the `/var/run/secrets/kubernetes.io/serviceaccount` path while initializing the client.
-
-If you have RBAC enabled on your cluster, when you applied the sample deployment file [deployment/sample.yaml](deployment/sample_single_namespace.yaml),
-it will create required serviceaccount, role and rolebinding and then use that serviceaccount to be used
-by our kube-pod-terminator pods.
-
-If RBAC is not enabled on your cluster, please follow [that documentation](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) to enable it.
