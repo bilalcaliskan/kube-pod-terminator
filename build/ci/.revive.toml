@@ -11,7 +11,7 @@ errorCode = 1
 [rule.constant-logical-expr]
 [rule.context-keys-type]
 [rule.dot-imports]
-[rule.empty-block]
+# [rule.empty-block]
 [rule.error-naming]
 [rule.error-return]
 [rule.errorf]
