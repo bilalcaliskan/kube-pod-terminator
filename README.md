@@ -50,6 +50,7 @@ Flags:
       --terminatingStateMinutes int32   terminate stucked pods in terminating state which are more than that value (default 30)
       --tickerIntervalMinutes int32     interval of scheduled job to run (default 5)
   -v, --verbose                         verbose output of the logging library (default false)
+      --version                         version for kube-pod-terminator
 ```
 
 ## Installation
@@ -114,14 +115,14 @@ $ ./kube-pod-terminator --inCluster false --kubeConfigPaths ~/.kube/config
 
 ## Development
 This project requires below tools while developing:
-- [Golang 1.17](https://golang.org/doc/go1.16)
+- [Golang 1.19](https://golang.org/doc/go1.19)
 - [pre-commit](https://pre-commit.com/)
 - [golangci-lint](https://golangci-lint.run/usage/install/) - required by [pre-commit](https://pre-commit.com/)
 - [gocyclo](https://github.com/fzipp/gocyclo) - required by [pre-commit](https://pre-commit.com/)
 
 After you installed [pre-commit](https://pre-commit.com/), simply run below command to prepare your development environment:
 ```shell
-$ pre-commit install
+$ pre-commit install -c build/ci/.pre-commit-config.yaml
 ```
 
 ## License
