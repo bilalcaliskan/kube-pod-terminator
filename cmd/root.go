@@ -1,13 +1,14 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/bilalcaliskan/kube-pod-terminator/internal/version"
 
 	"github.com/bilalcaliskan/kube-pod-terminator/internal/k8s"
 	"github.com/bilalcaliskan/kube-pod-terminator/internal/logging"
@@ -21,7 +22,7 @@ var (
 	logger            *zap.Logger
 	kubeConfigPathArr []string
 	opts              *options.KubePodTerminatorOptions
-	GitVersion        string
+	ver               = version.Get()
 )
 
 func init() {
@@ -55,7 +56,7 @@ func init() {
 var rootCmd = &cobra.Command{
 	Use:     "kube-pod-terminator",
 	Short:   "Unwanted pod cleaner for Kubernetes(terminating/evicted)",
-	Version: GitVersion,
+	Version: ver.GitVersion,
 	Long: `On some Kubernetes versions, there is a problem that pods stuck in **Terminating** state on some circumstances. This tool
 connects to the **kube-apiserver**, discovers Terminating pods which are in Terminating status and destroys them. This tool can also be
 used for Evicted state pods.`,
@@ -66,9 +67,17 @@ used for Evicted state pods.`,
 		}
 
 		if _, err := os.Stat(opts.BannerFilePath); err == nil {
-			bannerBytes, _ := ioutil.ReadFile(opts.BannerFilePath)
+			bannerBytes, _ := os.ReadFile(opts.BannerFilePath)
 			banner.Init(os.Stdout, true, false, strings.NewReader(string(bannerBytes)))
 		}
+
+		logger.Info("kube-pod-terminator is started",
+			zap.String("appVersion", ver.GitVersion),
+			zap.String("goVersion", ver.GoVersion),
+			zap.String("goOS", ver.GoOs),
+			zap.String("goArch", ver.GoArch),
+			zap.String("gitCommit", ver.GitCommit),
+			zap.String("buildDate", ver.BuildDate))
 
 		// our application logic starts right here
 		kubeConfigPathArr = strings.Split(opts.KubeConfigPaths, ",")
