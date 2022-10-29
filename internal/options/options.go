@@ -17,8 +17,6 @@ type KubePodTerminatorOptions struct {
 	Namespace string
 	// TickerIntervalMinutes is the Interval of scheduled job to run
 	TickerIntervalMinutes int32
-	// ChannelCapacity is the capacity for concurrency
-	ChannelCapacity int
 	// GracePeriodSeconds is the grace period to delete pods
 	GracePeriodSeconds int64
 	// TerminateEvicted is a boolean flag to tell if terminating evicted pods is supported

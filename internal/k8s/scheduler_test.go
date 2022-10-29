@@ -29,7 +29,6 @@ func getDefaultOpts() *options.KubePodTerminatorOptions {
 		KubeConfigPaths:         filepath.Join(os.Getenv("HOME"), ".kube", "config"),
 		Namespace:               "all",
 		TickerIntervalMinutes:   5,
-		ChannelCapacity:         10,
 		GracePeriodSeconds:      30,
 		TerminateEvicted:        true,
 		TerminatingStateMinutes: 30,
@@ -410,7 +409,7 @@ func TestTerminatePodsWithoutCreating(t *testing.T) {
 	testOpts := getDefaultOpts()
 
 	wg.Add(1)
-	podChannel := make(chan v1.Pod, testOpts.ChannelCapacity)
+	podChannel := make(chan v1.Pod, 10)
 	podChannel <- v1.Pod{}
 	/*pod, _ := api.createTerminatingPod("demo-pod", "default", nil)
 	podChannel <- *pod*/
@@ -426,7 +425,7 @@ func TestTerminatePods(t *testing.T) {
 	testOpts := getDefaultOpts()
 
 	wg.Add(1)
-	podChannel := make(chan v1.Pod, testOpts.ChannelCapacity)
+	podChannel := make(chan v1.Pod, 10)
 	pod, _ := api.createTerminatingPod("demo-pod", "default", nil)
 	podChannel <- *pod
 	go terminatePods(podChannel, &wg, api.ClientSet, logging.GetLogger(), testOpts.GracePeriodSeconds)

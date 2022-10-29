@@ -33,7 +33,6 @@ func init() {
 		"comma separated list of kubeconfig file paths to access with the cluster")
 	rootCmd.Flags().StringVarP(&opts.Namespace, "namespace", "", "all", "target namespace to run on")
 	rootCmd.Flags().Int32VarP(&opts.TickerIntervalMinutes, "tickerIntervalMinutes", "", 5, "interval of scheduled job to run")
-	rootCmd.Flags().IntVarP(&opts.ChannelCapacity, "channelCapacity", "", 10, "channel capacity for concurrency")
 	rootCmd.Flags().Int64VarP(&opts.GracePeriodSeconds, "gracePeriodSeconds", "", 30, "grace period to delete target pods")
 	rootCmd.Flags().BoolVarP(&opts.TerminateEvicted, "terminateEvicted", "", true, "terminate evicted pods in specified namespaces")
 	rootCmd.Flags().Int32VarP(&opts.TerminatingStateMinutes, "terminatingStateMinutes", "", 30, "terminate stucked pods "+
