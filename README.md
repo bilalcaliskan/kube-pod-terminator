@@ -38,8 +38,10 @@ Kube-pod-terminator can be customized with several command line arguments. You c
 via [sample deployment file](deployment/sample_single_namespace.yaml) or directly to the binary. Here is the list of arguments you can pass:
 
 ```
+Usage:
+  kube-pod-terminator [flags]
+
 Flags:
-      --channelCapacity int             channel capacity for concurrency (default 10)
       --gracePeriodSeconds int          grace period to delete target pods (default 30)
   -h, --help                            help for kube-pod-terminator
       --inCluster                       specify if kube-pod-terminator is running in cluster
