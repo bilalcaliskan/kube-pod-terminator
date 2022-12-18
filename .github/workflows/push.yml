@@ -17,6 +17,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
+          cache: true
       - name: Lint code
         run: make -s lint
       - name: Clean downloaded binaries
@@ -31,6 +32,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
+          cache: true
       - name: Run fmt
         run: make -s fmt
       - name: Clean downloaded binaries
@@ -48,6 +50,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
+          cache: true
       - name: Test
         run: make -s test
 
@@ -107,6 +110,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
+          cache: true
       - name: Coverage Test
         run: make -s test-with-coverage
       - name: SonarCloud Scan
@@ -139,6 +143,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
+          cache: true
       - name: Build
         run: make -s build
 
@@ -188,6 +193,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
+          cache: true
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
