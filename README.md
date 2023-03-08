@@ -117,7 +117,7 @@ $ ./kube-pod-terminator --inCluster false --kubeConfigPaths ~/.kube/config
 
 ## Development
 This project requires below tools while developing:
-- [Golang 1.19](https://golang.org/doc/go1.19)
+- [Golang 1.20](https://golang.org/doc/go1.19)
 - [pre-commit](https://pre-commit.com/)
 - [golangci-lint](https://golangci-lint.run/usage/install/) - required by [pre-commit](https://pre-commit.com/)
 - [gocyclo](https://github.com/fzipp/gocyclo) - required by [pre-commit](https://pre-commit.com/)
