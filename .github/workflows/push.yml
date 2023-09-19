@@ -12,7 +12,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Go
         uses: actions/setup-go@v4
         with:
@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Go
         uses: actions/setup-go@v4
         with:
@@ -45,7 +45,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Go
         uses: actions/setup-go@v4
         with:
@@ -62,7 +62,7 @@ jobs:
         language: [ 'go' ]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
@@ -75,7 +75,7 @@ jobs:
   sonarcloud:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Install Go
@@ -106,7 +106,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Go
         uses: actions/setup-go@v4
         with:
@@ -120,7 +120,7 @@ jobs:
     needs: [lint, fmt, test, codeql, sonarcloud, build]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: '0'
       - name: Bump version and push tag
@@ -136,7 +136,7 @@ jobs:
       - tag
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set outputs
@@ -159,7 +159,7 @@ jobs:
           go-version-file: "go.mod"
           cache: true
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v4
+        uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
           args: release --rm-dist --config build/package/.goreleaser.yaml
