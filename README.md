@@ -9,6 +9,7 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bilalcaliskan_kube-pod-terminator&metric=coverage)](https://sonarcloud.io/summary/new_code?id=bilalcaliskan_kube-pod-terminator)
 [![Release](https://img.shields.io/github/release/bilalcaliskan/kube-pod-terminator.svg)](https://github.com/bilalcaliskan/kube-pod-terminator/releases/latest)
 [![Go version](https://img.shields.io/github/go-mod/go-version/bilalcaliskan/kube-pod-terminator)](https://github.com/bilalcaliskan/kube-pod-terminator)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 On some Kubernetes versions, there is a problem that pods stuck in **Terminating** state on some circumstances. This tool
