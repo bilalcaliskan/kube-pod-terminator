@@ -16,13 +16,13 @@ On some Kubernetes versions, there is a problem that pods stuck in **Terminating
 connects to the **kube-apiserver**, discovers Terminating pods which are in **Terminating** status more than **--terminatingStateMinutes**
 minutes, which is defaults to 30 minutes.
 
-This tool also discovers pods which are at **Evicted** state if **--terminateEvicted** passed(enabled by default) and
+This tool also discovers pods which are at **Evicted** state if **--terminate-evicted** flag passed(enabled by default) and
 clears them all.
 
 Please note that **kube-pod-terminator** can work in below modes:
-- Outside of Kubernetes cluster as a CLI (**--oneShot** should be passed, default behavior)
-- Inside Kubernetes cluster as Deployment (**--inCluster=true** should be passed)
-- Outside of Kubernetes cluster as binary (**--inCluster=false --oneShot=false** should be passed)
+- Outside of Kubernetes cluster as a CLI (**--one-shot** should be passed, default behavior)
+- Inside Kubernetes cluster as Deployment (**--in-cluster=true** should be passed)
+- Outside of Kubernetes cluster as binary (**--in-cluster=false --one-shot=false** should be passed)
 
 Please refer to [Installation section](#installation) for more information.
 
@@ -36,40 +36,40 @@ Please refer to [Installation section](#installation) for more information.
 
 ## Configuration
 Kube-pod-terminator can be customized with several command line arguments. You can pass arguments
-via [sample deployment file](deployment/sample_single_namespace.yaml) or directly to the binary. Here is the list of arguments you can pass:
+via [sample deployment file](deployments/sample_single_namespace.yaml) or directly to the binary. Here is the list of arguments you can pass:
 
 ```
 Usage:
   kube-pod-terminator [flags]
 
 Flags:
-      --gracePeriodSeconds int          grace period to delete target pods (default 30)
-  -h, --help                            help for kube-pod-terminator
-      --inCluster                       specify if kube-pod-terminator is running in cluster
-      --kubeConfigPaths string          comma separated list of kubeconfig file paths to access with the cluster (default "/home/joshsagredo/.kube/config")
-      --namespace string                target namespace to run on (default "all")
-      --oneShot                         specifier to run kube-pod-terminator only one time instead of continuously running in the background. should be true if you are using app as CLI. (default true)
-      --terminateEvicted                terminate evicted pods in specified namespaces (default true)
-      --terminatingStateMinutes int32   terminate stucked pods in terminating state which are more than that value (default 30)
-      --tickerIntervalMinutes int32     interval of scheduled job to run (default 5)
-  -v, --verbose                         verbose output of the logging library (default false)
-      --version                         version for kube-pod-terminator
+      --grace-period-seconds int          grace period to delete target pods (default 30)
+  -h, --help                              help for kube-pod-terminator
+      --in-cluster                        specify if kube-pod-terminator is running in cluster
+      --kubeconfig-paths string          comma separated list of kubeconfig file paths to access with the cluster (default "/home/joshsagredo/.kube/config")
+      --namespace string                  target namespace to run on (default "all")
+      --one-shot                          specifier to run kube-pod-terminator only one time instead of continuously running in the background. should be true if you are using app as CLI. (default true)
+      --terminate-evicted                 terminate evicted pods in specified namespaces (default true)
+      --terminating-state-minutes int32   terminate stucked pods in terminating state which are more than that value (default 30)
+      --ticker-interval-minutes int32     interval of scheduled job to run (default 5)
+  -v, --verbose                           verbose output of the logging library (default false)
+      --version                           version for kube-pod-terminator
 ```
 
 ## Installation
 Kube-pod-terminator can be deployed as Kubernetes deployment or standalone installation
 
 ### Kubernetes
-You can use [sample deployment file](deployment/sample_single_namespace.yaml) to deploy your Kubernetes cluster.
+You can use [sample deployment file](deployments/sample_single_namespace.yaml) to deploy your Kubernetes cluster.
 This file also creates required **Role** and **RoleBindings** to take actions on problematic pods.
 
 ```shell
-$ kubectl create -f deployment/sample_single_namespace.yaml
+$ kubectl create -f deployments/sample_single_namespace.yaml
 ```
 
 ### All namespaces support
 By default, kube-pod-terminator runs to terminate pods in `default` namespace. But that behavior can be changed with
-`namespace` flag. You can see the example Kubernetes manifest file [deployment/sample_all_namespaces.yaml](deployment/sample_all_namespaces.yaml).
+`namespace` flag. You can see the example Kubernetes manifest file [deployment/sample_all_namespaces.yaml](deployments/sample_all_namespaces.yaml).
 Keep in mind that this file creates necessary `ClusterRole` and `ClusterRoleBinding` to be able to take proper actions on all
 namespaces.
 ```
@@ -78,18 +78,18 @@ namespaces.
 
 ### Multi Cluster support
 kube-pod-terminator can terminate the pods of multiple clusters if multiple kubeconfig file path is provided
-to **--kubeConfigPath** flag.
+to **--kubeconfig-paths** flag.
 
 If you run the kube-pod-terminator inside a Kubernetes cluster, it manages the terminating pods of that current
 cluster by default. But keep in mind that if you want to manage terminating pods on multiple clusters
 and run kube-pod-terminator inside a Kubernetes cluster, you should mount multiple kubeconfig files as configmap or secret
 into pod and pass below arguments in your Deployment config:
 ```
---inCluster=false
---kubeConfigPath=/tmp/kubeconfig1,/tmp/kubeconfig2,/tmp/kubeconfig3
+--in-cluster=false
+--kubeconfig-paths=/tmp/kubeconfig1,/tmp/kubeconfig2,/tmp/kubeconfig3
 ```
 
-You can check [deployment/sample_external_clusters.yaml](deployment/sample_external_clusters.yaml) as example.
+You can check [deployment/sample_external_clusters.yaml](deployments/sample_external_clusters.yaml) as example.
 
 But before creating deployment file, you should create configmaps from your desired kubeconfigs like below:
 ```shell
@@ -111,7 +111,7 @@ use that method to run kube-pod-terminator outside of a Kubernetes cluster.
 
 After then, you can simply run binary by providing required command line arguments:
 ```shell
-$ ./kube-pod-terminator --inCluster false --kubeConfigPaths ~/.kube/config
+$ ./kube-pod-terminator --in-cluster=false --kubeconfig-paths ~/.kube/config
 ```
 
 > Critical command line arguments while running kube-pod-terminator as standalone application are **--inCluster**, **--kubeConfigPaths**

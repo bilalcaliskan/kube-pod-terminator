@@ -299,7 +299,7 @@ func TestRunEvictedPodsSingleNamespace(t *testing.T) {
 }
 
 func TestRunBrokenApiCall(t *testing.T) {
-	restConfig, err := GetConfig("../../mock/kubeconfig", false)
+	restConfig, err := GetConfig("../../test/kubeconfig", false)
 	assert.Nil(t, err)
 	assert.NotNil(t, restConfig)
 
@@ -388,7 +388,7 @@ func TestRunTerminatingPodsSingleNamespace(t *testing.T) {
 }
 
 func TestGetClientSet(t *testing.T) {
-	restConfig, err := GetConfig("../../mock/kubeconfig", false)
+	restConfig, err := GetConfig("../../test/kubeconfig", false)
 	assert.Nil(t, err)
 	assert.NotNil(t, restConfig)
 
@@ -396,7 +396,7 @@ func TestGetClientSet(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, clientSet)
 
-	restConfig, err = GetConfig("../../mock/broken_kubeconfig", false)
+	restConfig, err = GetConfig("../../test/broken_kubeconfig", false)
 	assert.NotNil(t, err)
 	assert.Nil(t, restConfig)
 }
