@@ -67,9 +67,9 @@ spec:
           command: ["./main"]
           args: [
               "--namespace", "default",
-              "--tickerIntervalMin", "10",
-              "--inCluster=true",
-              "--oneShot=false"
+              "--ticker-interval-minutes", "10",
+              "--in-cluster=true",
+              "--one-shot=false"
           ]
           imagePullPolicy: Always
           name: kube-pod-terminator

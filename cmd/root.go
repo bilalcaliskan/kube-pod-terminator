@@ -28,22 +28,22 @@ var (
 func init() {
 	opts = options.GetKubePodTerminatorOptions()
 
-	rootCmd.Flags().BoolVarP(&opts.InCluster, "inCluster", "", false, "specify if kube-pod-terminator is running in cluster")
-	rootCmd.Flags().StringVarP(&opts.KubeConfigPaths, "kubeConfigPaths", "", filepath.Join(os.Getenv("HOME"), ".kube", "config"),
+	rootCmd.Flags().BoolVarP(&opts.InCluster, "in-cluster", "", false, "specify if kube-pod-terminator is running in cluster")
+	rootCmd.Flags().StringVarP(&opts.KubeConfigPaths, "kubeconfig-paths", "", filepath.Join(os.Getenv("HOME"), ".kube", "config"),
 		"comma separated list of kubeconfig file paths to access with the cluster")
 	rootCmd.Flags().StringVarP(&opts.Namespace, "namespace", "", "all", "target namespace to run on")
-	rootCmd.Flags().Int32VarP(&opts.TickerIntervalMinutes, "tickerIntervalMinutes", "", 5, "interval of scheduled job to run")
-	rootCmd.Flags().Int64VarP(&opts.GracePeriodSeconds, "gracePeriodSeconds", "", 30, "grace period to delete target pods")
-	rootCmd.Flags().BoolVarP(&opts.TerminateEvicted, "terminateEvicted", "", true, "terminate evicted pods in specified namespaces")
-	rootCmd.Flags().Int32VarP(&opts.TerminatingStateMinutes, "terminatingStateMinutes", "", 30, "terminate stucked pods "+
+	rootCmd.Flags().Int32VarP(&opts.TickerIntervalMinutes, "ticker-interval-minutes", "", 5, "interval of scheduled job to run")
+	rootCmd.Flags().Int64VarP(&opts.GracePeriodSeconds, "grace-period-seconds", "", 30, "grace period to delete target pods")
+	rootCmd.Flags().BoolVarP(&opts.TerminateEvicted, "terminate-evicted", "", true, "terminate evicted pods in specified namespaces")
+	rootCmd.Flags().Int32VarP(&opts.TerminatingStateMinutes, "terminating-state-minutes", "", 30, "terminate stucked pods "+
 		"in terminating state which are more than that value")
-	rootCmd.Flags().BoolVarP(&opts.OneShot, "oneShot", "", true, "specifier to run kube-pod-terminator "+
+	rootCmd.Flags().BoolVarP(&opts.OneShot, "one-shot", "", true, "specifier to run kube-pod-terminator "+
 		"only one time instead of continuously running in the background. should be true if you are using app as CLI.")
-	rootCmd.Flags().StringVarP(&opts.BannerFilePath, "bannerFilePath", "", "build/ci/banner.txt",
+	rootCmd.Flags().StringVarP(&opts.BannerFilePath, "banner-file-path", "", "build/ci/banner.txt",
 		"relative path of the banner file")
 	rootCmd.Flags().BoolVarP(&opts.VerboseLog, "verbose", "v", false, "verbose output of the logging library (default false)")
 
-	if err := rootCmd.Flags().MarkHidden("bannerFilePath"); err != nil {
+	if err := rootCmd.Flags().MarkHidden("banner-file-path"); err != nil {
 		panic("fatal error occured while hiding flag")
 	}
 

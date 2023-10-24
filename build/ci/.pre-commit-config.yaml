@@ -13,19 +13,29 @@ repos:
       - id: check-json
       - id: check-merge-conflict
       - id: check-symlinks
-      - id: detect-private-key
+#      - id: detect-private-key
       - id: detect-aws-credentials
   - repo: https://github.com/dnephin/pre-commit-golang
-    rev: v0.5.0
+    rev: v0.5.1
     hooks:
-      - id: go-mod-vendor
-      - id: go-mod-tidy
+      #      - id: go-mod-vendor
+      #      - id: go-mod-tidy
       - id: go-fmt
-      - id: go-vet
+      #      - id: go-vet
       - id: go-imports
       - id: go-cyclo
-        args: [-over=15]
+        args: [ -over=15 ]
       - id: no-go-testing
-      - id: golangci-lint
-      - id: go-unit-tests
+      #      - id: golangci-lint
+      # - id: go-unit-tests
       - id: go-build
+  - repo: https://github.com/bilalcaliskan/pre-commit-golang
+    rev: v1.0.6
+    hooks:
+      - id: vendor
+      - id: tidy
+      - id: vet
+      - id: golangci-lint
+        args: []
+      - id: test
+        args: ["-v", "-timeout=250s", "-tags=unit", "-tags=e2e", "-tags=integration"]

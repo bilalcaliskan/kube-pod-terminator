@@ -9,10 +9,9 @@ metadata:
 ---
 
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: kube-pod-terminator
-  namespace: default
 rules:
   - apiGroups:
       - ""
@@ -26,13 +25,13 @@ rules:
 ---
 
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   name: kube-pod-terminator
   namespace: default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: kube-pod-terminator
 subjects:
   - kind: ServiceAccount
@@ -61,36 +60,15 @@ spec:
         app: kube-pod-terminator
         deployment: kube-pod-terminator
     spec:
-      serviceAccountName: kube-pod-terminator-sa
+      serviceAccountName: kube-pod-terminator
       containers:
         - image: 'docker.io/bilalcaliskan/kube-pod-terminator:latest'
           command: ["./main"]
           args: [
-              "--namespace", "default",
-              "--tickerIntervalMin", "10",
-              "--inCluster=true",
-              "--kubeConfigPaths", "/opt/cluster1-config.yaml,/opt/cluster2-config.yaml,/opt/cluster3-config.yaml",
-              "--oneShot=false"
+              "--namespace", "all",
+              "--ticker-interval-minutes", "10",
+              "--in-cluster=true",
+              "--one-shot=false"
           ]
           imagePullPolicy: Always
           name: kube-pod-terminator
-          volumeMounts:
-            - name: cluster1-config
-              mountPath: /opt/cluster1-config.yaml
-              subPath: cluster1-config.yaml
-            - name: cluster2-config
-              mountPath: /opt/cluster2-config.yaml
-              subPath: cluster2-config.yaml
-            - name: cluster3-config
-              mountPath: /opt/cluster3-config.yaml
-              subPath: cluster3-config.yaml
-      volumes:
-        - name: cluster1-config
-          configMap:
-            name: cluster1-config
-        - name: cluster2-config
-          configMap:
-            name: cluster2-config
-        - name: cluster3-config
-          configMap:
-            name: cluster3-config
