@@ -114,6 +114,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    name: build (${{ matrix.os }})
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
