@@ -1,6 +1,8 @@
 module github.com/bilalcaliskan/kube-pod-terminator
 
-go 1.20
+go 1.21
+
+toolchain go1.21.5
 
 require (
 	github.com/dimiro1/banner v1.1.0
