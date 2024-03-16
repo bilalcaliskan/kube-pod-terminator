@@ -49,8 +49,8 @@ lint-revive:
 	$(info running revive...)
 	$(LOCAL_BIN)/revive -formatter=stylish -config=build/ci/.revive.toml -exclude ./vendor/... ./... || (echo revive returned an error, exiting!; sh -c 'exit 1';)
 
-.PHONY: upgrade-direct-deps
-upgrade-direct-deps: tidy
+.PHONY: upgrade-deps
+upgrade-deps: tidy
 	for item in `grep -v 'indirect' go.mod | grep '/' | cut -d ' ' -f 1`; do \
 		echo "trying to upgrade direct dependency $$item" ; \
 		go get -u $$item ; \
