@@ -13,7 +13,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 On some Kubernetes versions, there is a problem that pods stuck in **Terminating** state on some circumstances. This tool
-connects to the **kube-apiserver**, discovers Terminating pods which are in **Terminating** status more than **--terminatingStateMinutes**
+connects to the **kube-apiserver**, discovers Terminating pods which are in **Terminating** status more than **--terminating-state-minutes**
 minutes, which is defaults to 30 minutes.
 
 This tool also discovers pods which are at **Evicted** state if **--terminate-evicted** flag passed(enabled by default) and
